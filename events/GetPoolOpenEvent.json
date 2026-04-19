@@ -1,0 +1,11 @@
+{
+  "httpMethod": "GET",
+  "path": "/getPoolOpen",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": {
+    "week": "1"
+  },
+  "isBase64Encoded": false
+}

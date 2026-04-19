@@ -1,0 +1,8 @@
+pyproject.toml
+../FBPLib/__init__.py
+../FBPLib/getCurrentWeek.py
+../fbplib.egg-info/PKG-INFO
+../fbplib.egg-info/SOURCES.txt
+../fbplib.egg-info/dependency_links.txt
+../fbplib.egg-info/requires.txt
+../fbplib.egg-info/top_level.txt
