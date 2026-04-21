@@ -5,7 +5,7 @@ import pytz
 from decimal import Decimal
 from botocore.exceptions import ClientError
 import logging
-from FBPLib import getCurrentWeek
+from fbplib import getCurrentWeek
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()

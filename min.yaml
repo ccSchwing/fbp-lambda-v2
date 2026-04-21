@@ -37,13 +37,55 @@ Resources:
   FBPLibLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      LayerName: FBPLib
+      LayerName: fbplib
       Description: Shared FBP Python utility library
       ContentUri: src/FBPLib-Layer/
       CompatibleRuntimes:
         - python3.14
     Metadata:
       BuildMethod: python3.14
+
+  UpdateWeeklyResultsPython:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/UpdateWeeklyResults/src/
+      Handler: UpdateWeeklyResults.lambda_handler
+      Runtime: python3.14
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPUsersTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPWeeklyResultsTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPPicksTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPConfigTableName
+      Environment:
+        Variables:
+          FBPUsersTableName: !Ref FBPUsersTableName
+          FBPConfigTableName: !Ref FBPConfigTableName
+          FBPPicksTableName: !Ref FBPPicksTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+          FBPWeeklyResultsTableName: !Ref FBPWeeklyResultsTableName
+      Layers: 
+        - !Ref FBPLibLayer
+      Events:
+        UpdateWeeklyResultsGET:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /updateWeeklyResults
+            Method: GET
+            PayloadFormatVersion: "2.0"
+        UpdateWeeklyResultsOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /updateWeeklyResults
+            Method: OPTIONS
+            PayloadFormatVersion: "2.0"
 
   CalcWeeklyResultsPython:
     Type: AWS::Serverless::Function
@@ -502,6 +544,14 @@ Outputs:
       Value: !Ref MyHttpApi
       Export:
         Name: !Sub ${AWS::StackName}-HttpApiId
+    UpdateWeeklyResultsPythonFunction:
+      Description: UpdateWeeklyResultsPython Lambda Function ARN
+      Value: !GetAtt UpdateWeeklyResultsPython.Arn
+    UpdateWeeklyResultsPythonApi:
+      Description: UpdateWeeklyResultsPython API Endpoint
+      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/updateWeeklyResults
+      Export:
+        Name: !Sub ${AWS::StackName}-UpdateWeeklyResultsApi
     GetWeeklyResultsPythonFunction:
       Description: GetWeeklyResultsPython Lambda Function ARN
       Value: !GetAtt GetWeeklyResultsPython.Arn

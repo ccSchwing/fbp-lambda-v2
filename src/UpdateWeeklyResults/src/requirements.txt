@@ -1,0 +1,3 @@
+boto3
+aws-lambda-powertools==3.23.0
+pytz

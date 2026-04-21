@@ -7,12 +7,15 @@ import logging
 from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
-from FBPLib.fbpLog import fbpLog
-from FBPLib import getCurrentWeek
+from fbplib.fbpLog import fbpLog
+from fbplib import getCurrentWeek
 
 
 '''
-This function will update the user information for the given email address in the event.
+This function calculates the weekly results for each game based on the actual game results for the week.
+It queries the FBP-Schedule table for the current week and updates the Winner field for each
+game based on the HomeScore, AwayScore, Spread, and Underdog fields. This is used by the UpdateWeeklyResults function
+to determine the number of correct and incorrect picks for each user for the week.
 '''
 
 logger = logging.getLogger()

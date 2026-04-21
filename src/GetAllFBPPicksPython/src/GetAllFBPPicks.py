@@ -6,8 +6,8 @@ from decimal import Decimal
 from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
-from FBPLib import getCurrentWeek
-from FBPLib import fbpLog
+from fbplib import getCurrentWeek
+from fbplib import fbpLog
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
