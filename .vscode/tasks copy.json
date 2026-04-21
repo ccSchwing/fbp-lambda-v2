@@ -1,0 +1,194 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Debug AddOrUpdateFBPUser",
+      "type": "shell",
+      "command": "sam build AddOrUpdateFBPUser -t min.yaml && python3 -m debugpy --listen 5678 --wait-for-client src/AddOrUpdateFBPUser/src/AddOrUpdateFBPUser.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build AddOrUpdateFBPUser",
+      "type": "shell",
+      "command": "sam build AddOrUpdateFBPUser -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug AddOrUpdateFBPUser",
+      "type": "shell",
+      "command": "python3 -m debugpy --listen 5678 --wait-for-client src/AddOrUpdateFBPUser/src/AddOrUpdateFBPUser.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Debug CalcWeeklyResultsPython",
+      "type": "shell",
+      "command": "sam build CalcWeeklyResultsPython -t min.yaml && python3 -m debugpy --listen 5679 --wait-for-client src/CalcWeeklyResultsPython/src/CalcWeeklyResults.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build CalcWeeklyResultsPython",
+      "type": "shell",
+      "command": "sam build CalcWeeklyResultsPython -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug GetAllFBPPicksPython",
+      "type": "shell",
+      "command": "sam build GetAllFBPPicksPython -t min.yaml && python3 -m debugpy --listen 5680 --wait-for-client src/GetAllFBPPicksPython/src/GetAllFBPPicks.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build GetAllFBPPicksPython",
+      "type": "shell",
+      "command": "sam build GetAllFBPPicksPython -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug GetFBPPicksPython",
+      "type": "shell",
+      "command": "sam build GetFBPPicksPython -t min.yaml && sam local invoke GetFBPPicksPython -t .aws-sam/build/template.yaml --event events/getFBPPicksPython.json --debug-port 5681 --debugger-path .venv/lib/python3.14/site-packages/debugpy",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build GetFBPPicksPython",
+      "type": "shell",
+      "command": "sam build GetFBPPicksPython -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug GetFBPUser-Python",
+      "type": "shell",
+      "command": "sam build GetFBPUserPython -t min.yaml && python3 -m debugpy --listen 5682 --wait-for-client src/GetFBPUser-Python/src/GetFBPUser.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build GetFBPUserPython",
+      "type": "shell",
+      "command": "sam build GetFBPUserPython -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug GetPickSheetPython",
+      "type": "shell",
+      "command": "sam build GetPickSheetPython -t min.yaml && python3 -m debugpy --listen 5683 --wait-for-client src/GetPickSheetPython/src/GetPickSheet.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build GetPickSheetPython",
+      "type": "shell",
+      "command": "sam build GetPickSheetPython -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug GetPoolOpenEvent",
+      "type": "shell",
+      "command": "sam build GetPoolOpenEvent -t min.yaml && python3 -m debugpy --listen 5684 --wait-for-client src/GetPoolOpen/src/GetPoolOpenEvent.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build GetPoolOpenEvent",
+      "type": "shell",
+      "command": "sam build GetPoolOpenEvent -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug GetPoolConfig",
+      "type": "shell",
+      "command": "sam build GetPoolConfig -t min.yaml && python3 -m debugpy --listen 5685 --wait-for-client src/GetPoolOpen/src/GetPoolConfig.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build GetPoolConfig",
+      "type": "shell",
+      "command": "sam build GetPoolConfig -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug GetWeeklyResultsPython",
+      "type": "shell",
+      "command": "sam build GetWeeklyResultsPython -t min.yaml && python3 -m debugpy --listen 5686 --wait-for-client src/GetWeeklyResultsPython/src/GetWeeklyResults.py",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build GetWeeklyResultsPython",
+      "type": "shell",
+      "command": "sam build GetWeeklyResultsPython -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug SaveFBPPicksPython",
+      "type": "shell",
+      "command": "sam build SaveFBPPicksPython -t min.yaml && sam local invoke SaveFBPPicksPython -t .aws-sam/build/template.yaml --event events/saveFBPPicks.json --debug-port 5687 --debugger-path .venv/lib/python3.14/site-packages/debugpy",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build SaveFBPPicksPython",
+      "type": "shell",
+      "command": "sam build SaveFBPPicksPython -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug SetPoolStatus",
+      "type": "shell",
+      "command": "sam build SetPoolStatus -t min.yaml && sam local invoke SetPoolStatus -t .aws-sam/build/template.yaml --event events/setPoolStatus.json --debug-port 5688 --debugger-path .venv/lib/python3.14/site-packages/debugpy",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build SetPoolStatus",
+      "type": "shell",
+      "command": "sam build SetPoolStatus -t min.yaml",
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug UpdateWeeklyResults",
+      "type": "shell",
+      "command": "sam build UpdateWeeklyResultsPython -t min.yaml && sam local invoke UpdateWeeklyResultsPython -t .aws-sam/build/template.yaml --event events/updateWeeklyResults.json --debug-port 5689 --debugger-path .venv/lib/python3.14/site-packages/debugpy",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "sam build UpdateWeeklyResultsPython",
+      "type": "shell",
+      "command": "sam build UpdateWeeklyResultsPython -t min.yaml",
+      "problemMatcher": []
+    }
+  ]
+}

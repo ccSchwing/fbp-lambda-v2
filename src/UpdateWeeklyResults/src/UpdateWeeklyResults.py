@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import boto3
 import logging
 from decimal import Decimal
@@ -18,6 +19,8 @@ This function calcualates the weekly results for each user based on their picks 
 logger = logging.getLogger()
 logger.info("Initializing UpdateWeeklyResults Lambda function")  # Log initialization message
 logger.setLevel(logging.INFO)
+
+
 
 
 cors_config = CORSConfig(
@@ -83,7 +86,7 @@ def updateWeeklyResults():
         whether they were the winner for the week. Finally, update the FBP_USERS_TABLE
         '''
         response = picksTable.scan(
-            FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
+            FilterExpression=boto3.dynamodb.conditions.Attr('week').eq(week)
         )
         allUserPicks  = response.get('Items', [])
 
@@ -103,7 +106,23 @@ def updateWeeklyResults():
             Leave it to GetWeklyResults to determine the winner and update the FBP_USERS_TABLE with the total correct
             and incorrect picks for each user.
             '''
-            success = updateWeeklyUserResults(allUserPicks=allUserPicks, resultsTable=resultsTable, usersTable=usersTable)
+            success = updateWeeklyUserResults(allUserPicks=allUserPicks, resultsTable=resultsTable, usersTable=usersTable, week=week)
+            if not success:
+                logger.error("Failed to update weekly user results")
+                fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", "Failed to update weekly user results", "ERROR")
+                return Response (
+                    status_code=500,
+                    content_type="application/json",
+                    body=json.dumps({'error': 'Failed to update weekly user results'}),
+                )
+            else:
+                logger.info(f"Updated weekly user results for week {week}")
+                fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"Updated weekly user results for week {week}", "INFO")
+                return Response (
+                    status_code=200,
+                    content_type="application/json",
+                    body=json.dumps({'message': f'Weekly results updated for week {week}'}),
+                )
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"DynamoDB Error: {e}", "ERROR")
@@ -120,21 +139,12 @@ def updateWeeklyResults():
             content_type="application/json",
             body=json.dumps({'error': 'Unexpected error'}),
         )
-    return Response (
-        status_code=200,
-        content_type="application/json",
-        body=json.dumps({'message': f'Weekly results calculated for week {week}'}),
-    )
 
-def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, usersTable):
+def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, usersTable, week: int):
     FBP_SCHEDULE_TABLE_NAME = os.environ.get('FBPScheduleTableName', '2025-Schedule')
     logger.info(f"Using FBP Schedule DynamoDB table: {FBP_SCHEDULE_TABLE_NAME}")
     dynamodb = boto3.resource('dynamodb')
     scheduleTable = dynamodb.Table(FBP_SCHEDULE_TABLE_NAME)
-    week=getCurrentWeek.getCurrentWeek()
-    if week is None:
-        fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", "Could not determine current week", "ERROR")
-        return False
     scheduleResults = scheduleTable.scan(
         FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
     )
@@ -146,8 +156,8 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
     scheduleItems  = scheduleResults.get('Items', [])
     scheduleItems = sorted(scheduleItems, key=lambda x: x['GameId'])  # Sort by GameId to ensure correct order
     gameResults = {}
+    index = 0
     for game in scheduleItems:
-        index = 0
         winnerOfGame = game['Winner']
         # gameId = game['GameId']
         # I think it's safe to assume that the game results are in the
@@ -163,24 +173,31 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
         Get the picks for the user and compare them to the game results to
         calculate the number of correct and incorrect picks for the user.
         '''
-        userPicks= picks['Picks']  # This is a list of picks for the user for the week
         index = 0
+        userPicks= picks['picks']  # This is a list of picks for the user for the week
+        userPicks=list(userPicks)  # Convert the picks to a list of picks in the correct order
+        gameResultsList = [gameResults[i] for i in range(len(gameResults))]  # Convert gameResults to a list of results in the correct order
         correctPicks = 0
         incorrectPicks = 0
-        for pick in userPicks:
-            if pick == gameResults[index]:
-                correctPicks += 1
+        for index in range(len(userPicks)):
+            if index >= len(gameResultsList):
+                logger.warning(f"Index {index} out of range for gameResults")
+                return False
             else:
-                incorrectPicks += 1
-            index += 1
+                if userPicks[index] == gameResultsList[index]:
+                    correctPicks += 1
+                else:
+                    fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"userPick: {userPicks[index]} is incorrect for game result: {gameResultsList[index]}", "INFO")
+                    incorrectPicks += 1
+                index += 1
         email=picks['email']
-        correctPicks=picks['CorrectPicks']
-        incorrectPicks=picks['IncorrectPicks']
+        # correctPicks=picks['CorrectPicks']
+        # incorrectPicks=picks['IncorrectPicks']
         try:
             resultsTable.update_item(
             Key={'email': email},
             UpdateExpression="SET #CorrectPicks = :c, #IncorrectPicks = :i",
-            ExpressionAttributeNames={'#CorrectPicks': 'CorrectPicks', '#IncorrectPicks': 'IncorrectPicks'},
+            ExpressionAttributeNames={'#CorrectPicks': 'correctPicks', '#IncorrectPicks': 'incorrectPicks'},
             ExpressionAttributeValues={':c': correctPicks, ':i': incorrectPicks}
         )
         except ClientError as e:

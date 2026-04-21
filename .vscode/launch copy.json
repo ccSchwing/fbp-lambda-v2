@@ -1,0 +1,138 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to AddOrUpdateFBPUser",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to CalcWeeklyResultsPython",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5679
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to GetAllFBPPicksPython",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5680
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to GetFBPPicksPython",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5681
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to GetFBPUser-Python",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5682
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to GetPickSheetPython",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5683
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to GetPoolOpenEvent",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5684
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to GetPoolConfig",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5685
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to GetWeeklyResultsPython",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5686
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to SaveFBPPicksPython",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5687
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to SetPoolStatus",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5688
+      },
+      "justMyCode": false,
+      
+    },
+    {
+      "name": "Attach to UpdateWeeklyResults",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5689
+      },
+      "justMyCode": false,
+      "logToFile": true
+    }
+
+  ]
+}

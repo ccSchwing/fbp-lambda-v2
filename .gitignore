@@ -1,6 +1,5 @@
 # AWS SAM / Serverless project .gitignore
 # Tailor this file to your runtime (Java / Node / Python / etc.) and CI/CD setup.
-secrets/
 # -----------------------
 # SAM build & packaging
 # -----------------------
@@ -64,7 +63,6 @@ __pypackages__/
 # -----------------------
 # IDE / Editor files
 # -----------------------
-.vscode/
 .idea/
 *.iml
 *.ipr
