@@ -220,7 +220,7 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
             return False
         logger.info(f"Updated weekly results for user: {email} with correct picks: {correctPicks} and incorrect picks: {incorrectPicks}")
         fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"Updated weekly results for user: {email} with correct picks: {correctPicks} and incorrect picks: {incorrectPicks}", "INFO")
-        return True
+    return True
 
 
 def lambda_handler(event, context):
