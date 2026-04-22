@@ -4,6 +4,7 @@ import re
 import boto3
 import logging
 from decimal import Decimal
+from typing import List, Dict, Any
 from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, Response
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
@@ -106,8 +107,8 @@ def updateWeeklyResults():
             Leave it to GetWeklyResults to determine the winner and update the FBP_USERS_TABLE with the total correct
             and incorrect picks for each user.
             '''
-            success = updateWeeklyUserResults(allUserPicks=allUserPicks, resultsTable=resultsTable, usersTable=usersTable, week=week)
-            if not success:
+            weeklyResults = updateWeeklyUserResults(allUserPicks=allUserPicks, resultsTable=resultsTable, usersTable=usersTable, week=week)
+            if not weeklyResults:
                 logger.error("Failed to update weekly user results")
                 fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", "Failed to update weekly user results", "ERROR")
                 return Response (
@@ -116,12 +117,13 @@ def updateWeeklyResults():
                     body=json.dumps({'error': 'Failed to update weekly user results'}),
                 )
             else:
+                logger.info(f"Response data: {weeklyResults}")  # Log the response data for debugging
                 logger.info(f"Updated weekly user results for week {week}")
                 fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"Updated weekly user results for week {week}", "INFO")
                 return Response (
                     status_code=200,
                     content_type="application/json",
-                    body=json.dumps({'message': f'Weekly results updated for week {week}'}),
+                    body=json.dumps(weeklyResults)
                 )
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
@@ -140,7 +142,7 @@ def updateWeeklyResults():
             body=json.dumps({'error': 'Unexpected error'}),
         )
 
-def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, usersTable, week: int):
+def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, usersTable, week: int) -> List[Dict[str, Any]]:
     FBP_SCHEDULE_TABLE_NAME = os.environ.get('FBPScheduleTableName', '2025-Schedule')
     logger.info(f"Using FBP Schedule DynamoDB table: {FBP_SCHEDULE_TABLE_NAME}")
     dynamodb = boto3.resource('dynamodb')
@@ -151,7 +153,7 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
     if not scheduleResults.get('Items'):
         logger.warning(f"No schedule found for week {week}")
         fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"No schedule found for week {week}", "WARNING")
-        return False
+        return []
 
     scheduleItems  = scheduleResults.get('Items', [])
     scheduleItems = sorted(scheduleItems, key=lambda x: x['GameId'])  # Sort by GameId to ensure correct order
@@ -168,6 +170,10 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
     Now we have the results for each game for the week in gameResults.
     We can now calculate the number of correct and incorrect picks for each user.
     '''
+
+    gameResultsJSON = []
+    fbpError = []
+
     for picks in allUserPicks:
         '''
         Get the picks for the user and compare them to the game results to
@@ -182,7 +188,7 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
         for index in range(len(userPicks)):
             if index >= len(gameResultsList):
                 logger.warning(f"Index {index} out of range for gameResults")
-                return False
+                return fbpError
             else:
                 if userPicks[index] == gameResultsList[index]:
                     correctPicks += 1
@@ -191,6 +197,18 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
                     incorrectPicks += 1
                 index += 1
         email=picks['email']
+
+        # use email to get displayName from FBP_USERS_TABLE
+        displayName = "Unknown User"
+        try:
+            userResponse = usersTable.get_item(
+                Key={'email': email}
+            )
+            displayName = userResponse.get('Item', {}).get('displayName', 'Unknown User')
+        except ClientError as e:
+            logger.error(f"DynamoDB Error: {e}")
+            fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", 
+                   f"Failed to get displayName from DynamoDB: {e}", "ERROR")
         # correctPicks=picks['CorrectPicks']
         # incorrectPicks=picks['IncorrectPicks']
         try:
@@ -203,7 +221,7 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
         except ClientError as e:
             logger.error(f"DynamoDB Error: {e}")
             fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"DynamoDB Error: {e}", "ERROR")
-            return False
+            return fbpError
         '''
         Update the FBP_USERS_TABLE with the Total Correct and Incorrect Picks for the user for the Season.
         '''
@@ -214,13 +232,25 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
                 ExpressionAttributeNames={'#totalCorrectPicks': 'totalCorrectPicks', '#totalIncorrectPicks': 'totalIncorrectPicks'},
                 ExpressionAttributeValues={':zero': 0, ':c': correctPicks, ':i': incorrectPicks}
         )
+ 
         except ClientError as e:
             logger.error(f"DynamoDB Error: {e}")
             fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"DynamoDB Error: {e}", "ERROR")
-            return False
+            return fbpError
         logger.info(f"Updated weekly results for user: {email} with correct picks: {correctPicks} and incorrect picks: {incorrectPicks}")
         fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"Updated weekly results for user: {email} with correct picks: {correctPicks} and incorrect picks: {incorrectPicks}", "INFO")
-    return True
+        '''
+        Create a JSON String with the user's email, correct picks, and incorrect picks for the week.
+        '''
+        weeklyResult = {
+            'displayName': displayName,
+            'correctPicks': correctPicks,
+            'incorrectPicks': incorrectPicks
+        }
+        gameResultsJSON.append(weeklyResult)
+    gameResultsJSON.sort(key=lambda x: x['correctPicks'], reverse=True)  # Sort the results by correct picks in descending order
+    return gameResultsJSON
+
 
 
 def lambda_handler(event, context):
