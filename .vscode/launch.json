@@ -2,18 +2,35 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Remote Attach",
+      "name": "Python: Local Invoke and Debug UpdateWeeklyResults",
       "type": "debugpy",
       "request": "attach",
       "connect": {
         "host": "localhost",
         "port": 5678
       },
-      "preLaunchTask": "Cleanup",
+      "preLaunchTask": "Debug UpdateWeeklyResults",
       "postDebugTask": "Cleanup",
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}/src/UpdateWeeklyResults/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+        {
+      "name": "Python: Local Invoke and Debug GetFBPUserEmailAndDisplayName",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Debug GetFBPUserEmailAndDisplayName",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetFBPEmailAndDisplayName/src",
           "remoteRoot": "/var/task"
         }
       ]

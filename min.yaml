@@ -44,6 +44,39 @@ Resources:
         - python3.14
     Metadata:
       BuildMethod: python3.14
+  GetFBPEmailAndDisplayName:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/GetFBPEmailAndDisplayName/src/
+      Handler: GetFBPEmailAndDisplayName.lambda_handler
+      Runtime: python3.14
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPUsersTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
+
+      Environment:
+        Variables:
+          FBPUsersTableName: !Ref FBPUsersTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+      Layers: 
+        - !Ref FBPLibLayer
+      Events:
+        GetFBPEmailAndDisplayNameGET:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getFBPUserEmailAndDisplayName
+            Method: GET
+            PayloadFormatVersion: "2.0"
+        GetFBPEmailAndDisplayNameOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getFBPUserEmailAndDisplayName
+            Method: OPTIONS
+            PayloadFormatVersion: "2.0"
 
   UpdateWeeklyResultsPython:
     Type: AWS::Serverless::Function
@@ -107,6 +140,8 @@ Resources:
             TableName: !Ref FBPPicksTableName
         - DynamoDBReadPolicy:
             TableName: !Ref FBPConfigTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPScheduleTableName
       Environment:
         Variables:
           FBPUsersTableName: !Ref FBPUsersTableName
@@ -114,6 +149,7 @@ Resources:
           FBPPicksTableName: !Ref FBPPicksTableName
           FBPLogsTableName: !Ref FBPLogsTableName
           FBPWeeklyResultsTableName: !Ref FBPWeeklyResultsTableName
+          FBPScheduleTableName: !Ref FBPScheduleTableName
       Layers: 
         - !Ref FBPLibLayer
       Events:
@@ -547,14 +583,14 @@ Outputs:
       Value: !Ref MyHttpApi
       Export:
         Name: !Sub ${AWS::StackName}-HttpApiId
-    UpdateWeeklyResultsPythonFunction:
-      Description: UpdateWeeklyResultsPython Lambda Function ARN
-      Value: !GetAtt UpdateWeeklyResultsPython.Arn
-    UpdateWeeklyResultsPythonApi:
-      Description: UpdateWeeklyResultsPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/updateWeeklyResults
+    GetFBPEmailAndDisplayNameFunction:
+      Description: GetFBPEmailAndDisplayName Lambda Function ARN
+      Value: !GetAtt GetFBPEmailAndDisplayName.Arn
+    GetFBPEmailAndDisplayNameApi:
+      Description: GetFBPEmailAndDisplayName API Endpoint
+      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getFBPUserEmailAndDisplayName
       Export:
-        Name: !Sub ${AWS::StackName}-UpdateWeeklyResultsApi
+        Name: !Sub ${AWS::StackName}-GetFBPEmailAndDisplayNameApi
     GetWeeklyResultsPythonFunction:
       Description: GetWeeklyResultsPython Lambda Function ARN
       Value: !GetAtt GetWeeklyResultsPython.Arn

@@ -1,22 +1,43 @@
 {
   "version": "2.0.0",
   "tasks": [
-    {
-      "label": "sam build",
-      "type": "shell",
-      "command": "/Users/ccs/Library/Python/3.9/bin/sam",
-      "args": [
-        "build",
-        "--template-file",
-        "${workspaceFolder}/min.yaml",
-        "UpdateWeeklyResultsPython"
-      ],
-      "problemMatcher": []
-    },
+    // {
+    //   "label": "sam build",
+    //   "type": "shell",
+    //   "command": "/Users/ccs/Library/Python/3.9/bin/sam",
+    //   "args": [
+    //     "build",
+    //     "--template-file",
+    //     "${workspaceFolder}/min.yaml",
+    //     "UpdateWeeklyResultsPython"
+    //   ],
+    //   "problemMatcher": []
+    // },
     {
       "label": "Debug UpdateWeeklyResults",
       "type": "shell",
-      "command": "/Users/ccs/Library/Python/3.9/bin/sam local invoke -t ${workspaceFolder}/.aws-sam/build/template.yaml UpdateWeeklyResultsPython --event ${workspaceFolder}/events/updateWeeklyResults.json --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' -d 5678 --container-host-interface 0.0.0.0",
+      "command": "sam build -t min.yaml UpdateWeeklyResultsPython && sam local invoke -t .aws-sam/build/template.yaml UpdateWeeklyResultsPython --event events/updateWeeklyResults.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": [
+          {
+            "regexp": "^(x)(\\b)(x)$",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building image",
+          "endsPattern": "Debugging will proceed"
+        }
+      }
+    },
+       {
+      "label": "Debug GetFBPUserEmailAndDisplayName",
+      "type": "shell",
+      "command": "sam build -t min.yaml GetFBPEmailAndDisplayName && sam local invoke -t .aws-sam/build/template.yaml GetFBPEmailAndDisplayName --event events/getFBPEmailAndDisplayName.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0",
       "isBackground": true,
       "problemMatcher": {
         "pattern": [
@@ -37,7 +58,7 @@
     {
       "label": "Cleanup",
       "type": "shell",
-      "command": "docker rm -f $(docker ps -aq --filter 'label=com.amazonaws.sam.local=true') 2>/dev/null || true",
+      "command": "lsof -ti tcp:5678 | xargs kill -9 2>/dev/null; docker rm -f $(docker ps -aq) 2>/dev/null || true",
       "problemMatcher": []
     }
   ]
