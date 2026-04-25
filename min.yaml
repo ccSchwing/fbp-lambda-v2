@@ -44,6 +44,40 @@ Resources:
         - python3.14
     Metadata:
       BuildMethod: python3.14
+  GetListForEmail:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/GetListForEmail/src/
+      Handler: GetListForEmail.lambda_handler
+      Runtime: python3.14
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPUsersTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
+
+      Environment:
+        Variables:
+          FBPUsersTableName: !Ref FBPUsersTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+      Layers: 
+        - !Ref FBPLibLayer
+      Events:
+        GetListForEmailPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getListForEmail
+            Method: POST
+            PayloadFormatVersion: "2.0"
+        GetListForEmailOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getListForEmail
+            Method: OPTIONS
+            PayloadFormatVersion: "2.0"
+
   GetFBPEmailAndDisplayName:
     Type: AWS::Serverless::Function
     Properties:
@@ -583,6 +617,14 @@ Outputs:
       Value: !Ref MyHttpApi
       Export:
         Name: !Sub ${AWS::StackName}-HttpApiId
+    GetListForEmailFunction:
+      Description: GetListOfEmails Lambda Function ARN
+      Value: !GetAtt GetListForEmail.Arn
+    GetListForEmailApi:
+      Description: GetListOfEmails API Endpoint
+      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getListForEmail
+      Export:
+        Name: !Sub ${AWS::StackName}-GetListForEmailApi
     GetFBPEmailAndDisplayNameFunction:
       Description: GetFBPEmailAndDisplayName Lambda Function ARN
       Value: !GetAtt GetFBPEmailAndDisplayName.Arn

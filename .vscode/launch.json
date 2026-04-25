@@ -18,7 +18,7 @@
         }
       ]
     },
-        {
+    {
       "name": "Python: Local Invoke and Debug GetFBPUserEmailAndDisplayName",
       "type": "debugpy",
       "request": "attach",
@@ -31,6 +31,23 @@
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}/src/GetFBPEmailAndDisplayName/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
+      "name": "Python: Local Invoke and Debug GetListForEmail",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Debug GetListForEmail",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetListForEmail/src",
           "remoteRoot": "/var/task"
         }
       ]

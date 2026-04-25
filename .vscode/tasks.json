@@ -34,10 +34,31 @@
         }
       }
     },
-       {
+    {
       "label": "Debug GetFBPUserEmailAndDisplayName",
       "type": "shell",
       "command": "sam build -t min.yaml GetFBPEmailAndDisplayName && sam local invoke -t .aws-sam/build/template.yaml GetFBPEmailAndDisplayName --event events/getFBPEmailAndDisplayName.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": [
+          {
+            "regexp": "^(x)(\\b)(x)$",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building image",
+          "endsPattern": "Debugging will proceed"
+        }
+      }
+    },
+    {
+      "label": "Debug GetListForEmail",
+      "type": "shell",
+      "command": "sam build -t min.yaml GetListForEmail && sam local invoke -t .aws-sam/build/template.yaml GetListForEmail --event events/getListForEmail.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0",
       "isBackground": true,
       "problemMatcher": {
         "pattern": [
