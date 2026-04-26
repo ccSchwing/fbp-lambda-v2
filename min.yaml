@@ -32,6 +32,9 @@ Parameters:
   S3BucketName:
     Type: String
     Default: my-fbp.com
+  SESBucketName:
+    Type: String
+    Default: my-fbp-inbound-mail
 
 Resources:
   FBPLibLayer:
@@ -44,6 +47,81 @@ Resources:
         - python3.14
     Metadata:
       BuildMethod: python3.14
+  SendEmailRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SESPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail'
+                  - ses:SendTemplatedEmail
+                  - ses:SendBulkTemplatedEmail
+                Resource: "*"
+
+  # SendEmailRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #           Action: sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  SendEmail:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/SendEmail/src/
+      Handler: SendEmail.lambda_handler
+      Runtime: python3.14
+      # SES stuff
+      Role: 
+        Fn::GetAtt:
+          - SendEmailRole
+          - Arn
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPConfigTableName
+      Environment:
+        Variables:
+          FBPLogsTableName: !Ref FBPLogsTableName
+          FBPConfigTableName: !Ref FBPConfigTableName
+      Layers:
+        - !Ref FBPLibLayer
+      Events:
+        SendEmailPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /sendEmail
+            Method: POST
+            PayloadFormatVersion: '2.0'
+        SendEmailOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /sendEmail
+            Method: OPTIONS
+            PayloadFormatVersion: '2.0'
+
   GetListForEmail:
     Type: AWS::Serverless::Function
     Properties:
@@ -55,12 +133,15 @@ Resources:
             TableName: !Ref FBPUsersTableName
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPLogsTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPConfigTableName
 
       Environment:
         Variables:
           FBPUsersTableName: !Ref FBPUsersTableName
           FBPLogsTableName: !Ref FBPLogsTableName
-      Layers: 
+          FBPConfigTableName: !Ref FBPConfigTableName
+      Layers:
         - !Ref FBPLibLayer
       Events:
         GetListForEmailPost:
@@ -69,14 +150,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /getListForEmail
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         GetListForEmailOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /getListForEmail
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   GetFBPEmailAndDisplayName:
     Type: AWS::Serverless::Function
@@ -94,7 +175,7 @@ Resources:
         Variables:
           FBPUsersTableName: !Ref FBPUsersTableName
           FBPLogsTableName: !Ref FBPLogsTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         GetFBPEmailAndDisplayNameGET:
@@ -103,14 +184,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /getFBPUserEmailAndDisplayName
             Method: GET
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         GetFBPEmailAndDisplayNameOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /getFBPUserEmailAndDisplayName
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   UpdateWeeklyResultsPython:
     Type: AWS::Serverless::Function
@@ -139,7 +220,7 @@ Resources:
           FBPLogsTableName: !Ref FBPLogsTableName
           FBPWeeklyResultsTableName: !Ref FBPWeeklyResultsTableName
           FBPScheduleTableName: !Ref FBPScheduleTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         UpdateWeeklyResultsGET:
@@ -148,14 +229,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /updateWeeklyResults
             Method: GET
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         UpdateWeeklyResultsOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /updateWeeklyResults
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   CalcWeeklyResultsPython:
     Type: AWS::Serverless::Function
@@ -184,7 +265,7 @@ Resources:
           FBPLogsTableName: !Ref FBPLogsTableName
           FBPWeeklyResultsTableName: !Ref FBPWeeklyResultsTableName
           FBPScheduleTableName: !Ref FBPScheduleTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         CalcWeeklyResultsGET:
@@ -193,15 +274,15 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /calcWeeklyResults
             Method: GET
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         CalcWeeklyResultsOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /calcWeeklyResults
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
-   
+            PayloadFormatVersion: '2.0'
+
   GetWeeklyResultsPython:
     Type: AWS::Serverless::Function
     Properties:
@@ -226,7 +307,7 @@ Resources:
           FBPPicksTableName: !Ref FBPPicksTableName
           FBPLogsTableName: !Ref FBPLogsTableName
           FBPWeeklyResultsTableName: !Ref FBPWeeklyResultsTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         GetWeeklyResultsGET:
@@ -235,14 +316,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /getWeeklyResults
             Method: GET
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         GetWeeklyResultsOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /getWeeklyResults
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   SaveFBPPicksPython:
     Type: AWS::Serverless::Function
@@ -262,7 +343,7 @@ Resources:
           FBPConfigTableName: !Ref FBPConfigTableName
           FBPPicksTableName: !Ref FBPPicksTableName
           FBPLogsTableName: !Ref FBPLogsTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         SaveFBPPicksPOST:
@@ -271,14 +352,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /saveFBPPicks
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         SaveFBPPicksOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /saveFBPPicks
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   GetPickSheetPython:
     Type: AWS::Serverless::Function
@@ -299,7 +380,7 @@ Resources:
           FBPConfigTableName: !Ref FBPConfigTableName
           FBPPicksTableName: !Ref FBPPicksTableName
           FBPScheduleTableName: !Ref FBPScheduleTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         GetPickSheetGET:
@@ -308,14 +389,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /getPickSheet
             Method: GET
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         GetPickSheetOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /getPickSheet
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   GetPoolOpenEvent:
     Type: AWS::Serverless::Function
@@ -362,7 +443,7 @@ Resources:
       StageName: prod
       CorsConfiguration:
         AllowOrigins:
-          - "*"  # Change to your domain in production
+          - '*' # Change to your domain in production
         AllowHeaders:
           - Content-Type
           - X-Amz-Date
@@ -393,7 +474,7 @@ Resources:
         Variables:
           FBPConfigTableName: !Ref FBPConfigTableName
           FBPLogsTableName: !Ref FBPLogsTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         SetPoolStatusOpenPOST:
@@ -402,14 +483,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /setPoolStatusOpen
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         SetPoolStatusOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /setPoolStatusOpen
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   SetPoolStatusClosed:
     Type: AWS::Serverless::Function
@@ -423,7 +504,7 @@ Resources:
       Environment:
         Variables:
           FBPConfigTableName: !Ref FBPConfigTableName
-      Layers: 
+      Layers:
         - !Ref FBPLibLayer
       Events:
         SetPoolStatusClosedPOST:
@@ -432,14 +513,14 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /setPoolStatusClosed
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         SetPoolStatusClosedOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /setPoolStatusClosed
             Method: OPTIONS
-            PayloadFormatVersion: "2.0"  
+            PayloadFormatVersion: '2.0'
 
   GetFBPUserPython:
     Type: AWS::Serverless::Function
@@ -466,10 +547,10 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /getFBPUserPython
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
       Layers:
         - !Ref FBPLibLayer
-        
+
   UpdateFBPUserPython:
     Type: AWS::Serverless::Function
     Properties:
@@ -495,10 +576,9 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /updateFBPUser
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
       Layers:
         - !Ref FBPLibLayer
-
 
   AddFBPUserPython:
     Type: AWS::Serverless::Function
@@ -525,11 +605,9 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /addFBPUser
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
       Layers:
-        - !Ref FBPLibLayer  
-
-
+        - !Ref FBPLibLayer
 
   GetFBPPicksPython:
     Type: AWS::Serverless::Function
@@ -558,7 +636,7 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /getFBPPicksPython
             Method: POST
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
 
   GetAllFBPPicksPython:
     Type: AWS::Serverless::Function
@@ -597,7 +675,7 @@ Resources:
             ApiId: !Ref MyHttpApi
             Path: /getAllFBPPicks
             Method: GET
-            PayloadFormatVersion: "2.0"
+            PayloadFormatVersion: '2.0'
         GetAllFBPPicksPythonOptions:
           Type: HttpApi
           Properties:
@@ -605,112 +683,120 @@ Resources:
             Path: /getAllFBPPicks
             Method: OPTIONS
 
-
 Outputs:
-    HttpAPiUrl:
-      Description: URL of the HTTP API gateway
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
-      Export:
-        Name: !Sub ${AWS::StackName}-HttpApiUrl
-    HttpApiId:
-      Description: HTTP API ID
-      Value: !Ref MyHttpApi
-      Export:
-        Name: !Sub ${AWS::StackName}-HttpApiId
-    GetListForEmailFunction:
-      Description: GetListOfEmails Lambda Function ARN
-      Value: !GetAtt GetListForEmail.Arn
-    GetListForEmailApi:
-      Description: GetListOfEmails API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getListForEmail
-      Export:
-        Name: !Sub ${AWS::StackName}-GetListForEmailApi
-    GetFBPEmailAndDisplayNameFunction:
-      Description: GetFBPEmailAndDisplayName Lambda Function ARN
-      Value: !GetAtt GetFBPEmailAndDisplayName.Arn
-    GetFBPEmailAndDisplayNameApi:
-      Description: GetFBPEmailAndDisplayName API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getFBPUserEmailAndDisplayName
-      Export:
-        Name: !Sub ${AWS::StackName}-GetFBPEmailAndDisplayNameApi
-    GetWeeklyResultsPythonFunction:
-      Description: GetWeeklyResultsPython Lambda Function ARN
-      Value: !GetAtt GetWeeklyResultsPython.Arn
-    GetWeeklyResultsPythonApi:
-      Description: GetWeeklyResultsPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getWeeklyResults
-      Export:
-        Name: !Sub ${AWS::StackName}-GetWeeklyResultsApi
-    CalcWeeklyResultsPythonFunction:
-      Description: CalcWeeklyResultsPython Lambda Function ARN
-      Value: !GetAtt CalcWeeklyResultsPython.Arn
-    CalcWeeklyResultsPythonApi:
-      Description: CalcWeeklyResultsPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/calcWeeklyResults
-      Export:
-        Name: !Sub ${AWS::StackName}-CalcWeeklyResultsApi
-    SaveFBPPicksPythonFunction:
-      Description: SaveFBPPicksPython Lambda Function ARN
-      Value: !GetAtt SaveFBPPicksPython.Arn
-    SaveFBPPicksPythonApi:
-      Description: SaveFBPPicksPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/saveFBPPicks
-      Export:
-        Name: !Sub ${AWS::StackName}-SaveFBPPicksApi
-    GetPickSheetPythonFunction:
-      Description: GetPickSheetPython Lambda Function ARN
-      Value: !GetAtt GetPickSheetPython.Arn
-    GetPickSheetPythonApi:
-      Description: GetPickSheetPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getPickSheetPython
-      Export:
-        Name: !Sub ${AWS::StackName}-GetPickSheetApi
-    GetFBPPicksPythonApi:
-      Description: GetFBPPicksPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getFBPPicksPython
-      Export:
-        Name: !Sub ${AWS::StackName}-GetFBPPicksPythonApi
-    GetPoolOpenFunction:
-      Description: GetPoolOpen Lambda Function ARN
-      Value: !GetAtt GetPoolOpenEvent.Arn
-      Export:
-        Name: !Sub ${AWS::StackName}-GetPoolOpenApi
-    GetPoolConfigFunction:
-      Description: GetPoolConfig Lambda Function ARN
-      Value: !GetAtt GetPoolConfig.Arn
-    SetPoolStatusOpenFunction:
-      Description: SetPoolStatusOpen Lambda Function ARN
-      Value: !GetAtt SetPoolStatusOpen.Arn
-    SetPoolStatusOpenApi:
-      Description: SetPoolStatusOpen API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/setPoolStatusOpen
-      Export:
-        Name: !Sub ${AWS::StackName}-SetPoolStatusApi
-    SetPoolStatusClosedFunction:
-      Description: SetPoolStatusClosed Lambda Function ARN
-      Value: !GetAtt SetPoolStatusClosed.Arn
-    SetPoolStatusClosedApi:
-      Description: SetPoolStatusClosed API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/setPoolStatusClosed
-      Export:
-        Name: !Sub ${AWS::StackName}-SetPoolStatusClosedApi
-    GetFBPUserPythonEndpoint:
-       Description: GetFBPUserPython API Endpoint
-       Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getFBPUserPython
-       Export:
-         Name: !Sub ${AWS::StackName}-GetFBPUserPythonHttpApi
-    GetAllFBPPicksPythonEndpoint:
-      Description: GetAllFBPPicksPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getAllFBPPicks
-      Export:
-        Name: !Sub ${AWS::StackName}-GetAllFBPPicksPythonHttpApi
-    UpdateFBPUserPythonEndpoint:
-      Description: UpdateFBPUserPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/updateFBPUser
-      Export:
-        Name: !Sub ${AWS::StackName}-AddOrUpdateFBPUserPythonHttpApi
-    AddFBPUserPythonEndpoint:
-      Description: AddFBPUserPython API Endpoint
-      Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/addFBPUser
-      Export:
-        Name: !Sub ${AWS::StackName}-AddFBPUserPythonHttpApi
+  HttpAPiUrl:
+    Description: URL of the HTTP API gateway
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/
+    Export:
+      Name: !Sub ${AWS::StackName}-HttpApiUrl
+  HttpApiId:
+    Description: HTTP API ID
+    Value: !Ref MyHttpApi
+    Export:
+      Name: !Sub ${AWS::StackName}-HttpApiId
+  SendEmailFunction:
+    Description: SendEmail Lambda Function ARN
+    Value: !GetAtt SendEmail.Arn
+  SendEmailApi:
+    Description: SendEmail API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/sendEmail
+    Export:
+      Name: !Sub ${AWS::StackName}-SendEmailApi
+
+  GetListForEmailFunction:
+    Description: GetListOfEmails Lambda Function ARN
+    Value: !GetAtt GetListForEmail.Arn
+  GetListForEmailApi:
+    Description: GetListOfEmails API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getListForEmail
+    Export:
+      Name: !Sub ${AWS::StackName}-GetListForEmailApi
+  GetFBPEmailAndDisplayNameFunction:
+    Description: GetFBPEmailAndDisplayName Lambda Function ARN
+    Value: !GetAtt GetFBPEmailAndDisplayName.Arn
+  GetFBPEmailAndDisplayNameApi:
+    Description: GetFBPEmailAndDisplayName API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getFBPUserEmailAndDisplayName
+    Export:
+      Name: !Sub ${AWS::StackName}-GetFBPEmailAndDisplayNameApi
+  GetWeeklyResultsPythonFunction:
+    Description: GetWeeklyResultsPython Lambda Function ARN
+    Value: !GetAtt GetWeeklyResultsPython.Arn
+  GetWeeklyResultsPythonApi:
+    Description: GetWeeklyResultsPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getWeeklyResults
+    Export:
+      Name: !Sub ${AWS::StackName}-GetWeeklyResultsApi
+  CalcWeeklyResultsPythonFunction:
+    Description: CalcWeeklyResultsPython Lambda Function ARN
+    Value: !GetAtt CalcWeeklyResultsPython.Arn
+  CalcWeeklyResultsPythonApi:
+    Description: CalcWeeklyResultsPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/calcWeeklyResults
+    Export:
+      Name: !Sub ${AWS::StackName}-CalcWeeklyResultsApi
+  SaveFBPPicksPythonFunction:
+    Description: SaveFBPPicksPython Lambda Function ARN
+    Value: !GetAtt SaveFBPPicksPython.Arn
+  SaveFBPPicksPythonApi:
+    Description: SaveFBPPicksPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/saveFBPPicks
+    Export:
+      Name: !Sub ${AWS::StackName}-SaveFBPPicksApi
+  GetPickSheetPythonFunction:
+    Description: GetPickSheetPython Lambda Function ARN
+    Value: !GetAtt GetPickSheetPython.Arn
+  GetPickSheetPythonApi:
+    Description: GetPickSheetPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getPickSheetPython
+    Export:
+      Name: !Sub ${AWS::StackName}-GetPickSheetApi
+  GetFBPPicksPythonApi:
+    Description: GetFBPPicksPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getFBPPicksPython
+    Export:
+      Name: !Sub ${AWS::StackName}-GetFBPPicksPythonApi
+  GetPoolOpenFunction:
+    Description: GetPoolOpen Lambda Function ARN
+    Value: !GetAtt GetPoolOpenEvent.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-GetPoolOpenApi
+  GetPoolConfigFunction:
+    Description: GetPoolConfig Lambda Function ARN
+    Value: !GetAtt GetPoolConfig.Arn
+  SetPoolStatusOpenFunction:
+    Description: SetPoolStatusOpen Lambda Function ARN
+    Value: !GetAtt SetPoolStatusOpen.Arn
+  SetPoolStatusOpenApi:
+    Description: SetPoolStatusOpen API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/setPoolStatusOpen
+    Export:
+      Name: !Sub ${AWS::StackName}-SetPoolStatusApi
+  SetPoolStatusClosedFunction:
+    Description: SetPoolStatusClosed Lambda Function ARN
+    Value: !GetAtt SetPoolStatusClosed.Arn
+  SetPoolStatusClosedApi:
+    Description: SetPoolStatusClosed API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/setPoolStatusClosed
+    Export:
+      Name: !Sub ${AWS::StackName}-SetPoolStatusClosedApi
+  GetFBPUserPythonEndpoint:
+    Description: GetFBPUserPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getFBPUserPython
+    Export:
+      Name: !Sub ${AWS::StackName}-GetFBPUserPythonHttpApi
+  GetAllFBPPicksPythonEndpoint:
+    Description: GetAllFBPPicksPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getAllFBPPicks
+    Export:
+      Name: !Sub ${AWS::StackName}-GetAllFBPPicksPythonHttpApi
+  UpdateFBPUserPythonEndpoint:
+    Description: UpdateFBPUserPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/updateFBPUser
+    Export:
+      Name: !Sub ${AWS::StackName}-AddOrUpdateFBPUserPythonHttpApi
+  AddFBPUserPythonEndpoint:
+    Description: AddFBPUserPython API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/addFBPUser
+    Export:
+      Name: !Sub ${AWS::StackName}-AddFBPUserPythonHttpApi
