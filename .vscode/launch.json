@@ -2,6 +2,39 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Attach to SendEmail",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/SendEmail/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
+      "name": "Python: Local Invoke and Debug SendEmail",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Debug SendEmail",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/SendEmail/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
       "name": "Python: Local Invoke and Debug UpdateWeeklyResults",
       "type": "debugpy",
       "request": "attach",
