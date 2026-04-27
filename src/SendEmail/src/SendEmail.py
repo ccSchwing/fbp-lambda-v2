@@ -136,7 +136,7 @@ def sendEmailWithTemplate(email, firstName, templateName):
     ses = boto3.client('ses', region_name='us-east-1')
     try:
         response = ses.send_templated_email(
-            Source=email,
+            Source="fbpadmin@fbp-email.my-fbp.com",
             Destination={
                 'ToAddresses': [
                     email,

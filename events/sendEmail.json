@@ -6,7 +6,7 @@
   "headers": {
     "content-type": "application/json"
   },
-  "body": "{\"email\": \"chuckschwing@proton.me\", \"displayName\": \"The All Seeing Eye\", \"firstName\": \"Chuck\", \"templateName\": \"WelcomeEmailTemplate\"}",
+  "body": "{\"email\": \"chuckschwing@proton.me\", \"language\": \"en\", \"firstName\": \"Chuck\",  \"displayName\": \"The All Seeing Eye\", \"firstName\": \"Chuck\", \"templateName\": \"WelcomeEmailTemplate\"}",
   "requestContext": {
     "http": {
       "method": "POST",
