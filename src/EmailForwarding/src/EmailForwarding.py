@@ -30,13 +30,12 @@ def lambda_handler(event, context):
     try:
         # Get the SES notification from the event
         record=event['Records'][0]
-        # emailObject = s3_client.get_object(Bucket=my_bucket, Key=f"{s3_key_prefix}/{record['ses']['mail']['messageId']}")
         object_key=record['ses']['mail']['messageId']
         logger.info(f"Retrieving object: {record['ses']['mail']['messageId']}")
         logger.info(f"Object key: {object_key}")
+        logger.info(f"Bucket: {my_bucket}")
         emailObject = s3_client.get_object(Bucket=my_bucket, Key=f"{s3_key_prefix}/{record['ses']['mail']['messageId']}")
         raw_email= emailObject['Body'].read()
-        # raw_email=emailObject['Body'].read().decode('utf-8')
         msg=email.message_from_bytes(raw_email)
         original_from=msg['From']
         reply_to=msg['Reply-to']

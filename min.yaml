@@ -43,7 +43,6 @@ Parameters:
     Type: String
     Description: Verified SES identity to send from
     Default: fbpadmin@my-fbp.com
-
 Resources:
   FBPLibLayer:
     Type: AWS::Serverless::LayerVersion
