@@ -1,22 +1,10 @@
 {
   "version": "2.0.0",
   "tasks": [
-    // {
-    //   "label": "sam build",
-    //   "type": "shell",
-    //   "command": "/Users/ccs/Library/Python/3.9/bin/sam",
-    //   "args": [
-    //     "build",
-    //     "--template-file",
-    //     "${workspaceFolder}/min.yaml",
-    //     "UpdateWeeklyResultsPython"
-    //   ],
-    //   "problemMatcher": []
-    // },
-      {
-      "label": "Attach to SendEmail",
+    {
+      "label": "Debug EmailForwarding",
       "type": "shell",
-      "command": "sam local invoke -t .aws-sam/build/template.yaml SendEmail --event events/sendEmail.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0",
+      "command": "sam build -t min.yaml EmailForwarding && sam local invoke -t .aws-sam/build/template.yaml EmailForwarding --event events/emailForwarding.json --env-vars ${workspaceFolder}/.vscode/debug-env.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0",
       "isBackground": true,
       "problemMatcher": {
         "pattern": [
@@ -34,6 +22,7 @@
         }
       }
     },
+
     {
       "label": "Debug SendEmail",
       "type": "shell",

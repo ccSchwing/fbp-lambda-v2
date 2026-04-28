@@ -1,18 +1,19 @@
 {
   "version": "0.2.0",
   "configurations": [
-    {
-      "name": "Python: Attach to SendEmail",
+      {
+      "name": "Python: Local Invoke and Debug EmailForwarding",
       "type": "debugpy",
       "request": "attach",
       "connect": {
         "host": "localhost",
         "port": 5678
       },
+      "preLaunchTask": "Debug EmailForwarding",
       "postDebugTask": "Cleanup",
       "pathMappings": [
         {
-          "localRoot": "${workspaceFolder}/src/SendEmail/src",
+          "localRoot": "${workspaceFolder}/src/EmailForwarding/src",
           "remoteRoot": "/var/task"
         }
       ]

@@ -126,6 +126,15 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["SendEmail"]
 
+[function_build_definitions.ab3ff6dc-5365-445f-97ac-ca61fcf1bb15]
+codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/EmailForwarding/src"
+runtime = "python3.14"
+architecture = "x86_64"
+handler = "EmailForwarding.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["EmailForwarding"]
+
 [layer_build_definitions.4f363fc4-8b1e-49e5-b67e-b915fc5d61de]
 layer_name = "FBPLibLayer"
 codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/FBPLib-Layer"
