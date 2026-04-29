@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from fbplib.getCurrentWeek import getCurrentWeek
+from fbplib.fbpLog import fbpLog
 
 
 logger = logging.getLogger()
@@ -36,6 +37,8 @@ def getStandings():
     try:
         week_number = getCurrentWeek()
         if week_number is None:
+            fbpLog("fbpadmin@my-fbp.com", "GetStandings", "Cannot determine week.", "ERROR")
+            logger.error("Cannot determine week.")
             return {
                 'statusCode': 400,
                 'body': json.dumps({
@@ -67,6 +70,7 @@ def getStandings():
             items = response.get('Items', [])
             items.sort(key=lambda x: x.get('totalCorrectPicks', Decimal(0)), reverse=True)
 
+            fbpLog("fbpadmin@my-fbp.com", "GetStandings", "Retrieved Standings","INFO")
             return {
                 'statusCode': 200,
                 'body': json.dumps({
@@ -75,7 +79,8 @@ def getStandings():
             })
             }
         except ClientError as e:
-            print(f"DynamoDB Error: {e}")
+            fbpLog("fbpadmin@my-fbp.com", "GetStandings", f"Exception: {e}","ERROR")
+            logger.error(f"DynamoDB Error: {e}")
             return {
                'statusCode': 500,
                 'body': json.dumps({
@@ -84,7 +89,8 @@ def getStandings():
                 })
             } 
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            fbpLog("fbpadmin@my-fbp.com", "GetStandings", f"Exception: {e}","ERROR")
+            logger.error(f"Unexpected error: {e}")
             return {
                 'statusCode': 500,
                 'body': json.dumps({
