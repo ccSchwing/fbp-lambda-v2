@@ -70,7 +70,7 @@ architecture = "x86_64"
 handler = "GetPoolOpenEvent.lambda_handler"
 manifest_hash = ""
 packagetype = "Zip"
-functions = ["GetPoolOpenEvent", "GetPoolConfig"]
+functions = ["GetPoolOpen", "GetPoolConfig"]
 
 [function_build_definitions.ca15ba24-2b06-42b5-87c8-828b9267777e]
 codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/SetPoolStatus/src"

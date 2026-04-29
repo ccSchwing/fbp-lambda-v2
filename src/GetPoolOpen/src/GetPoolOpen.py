@@ -1,28 +1,48 @@
 import json
+from multiprocessing import pool
+import re
 import boto3
+import logging
 from botocore.exceptions import ClientError
+from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
+from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
+from fbplib.getCurrentWeek import getCurrentWeek
 
-def lambda_handler(event, context):
+
+logger = logging.getLogger()
+logger.info("Initializing GetPoolOpenEvent Lambda function")  # Log initialization message
+logger.setLevel(level=logging.INFO)
+logger.info("CORS configuration applied")
+
+cors_config = CORSConfig(
+    allow_origin="*",  # Or specify your domain like "https://yourdomain.com"
+    allow_headers=["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
+    max_age=86400,  # Cache preflight for 24 hours
+    allow_credentials=False
+)
+
+app=APIGatewayHttpResolver(cors=cors_config)
+@app.get("/getPoolOpen")
+@app.get("/getPoolStatus")
+def getPoolStatus():
     """
     Lambda function to retrieve poolOpen Boolean value from FBP-Config table
-    Week number is passed via the event
+    Will be used by most end user pages to determine whether they can do certain things.
     """
     
     # Initialize DynamoDB resource
+    logger.info("Connecting to DynamoDB table FBP-Config")
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table('FBP-Config')
     try:
-        if(event.get('queryStringParameters') and event['queryStringParameters'].get('week')):
-            week_number = event['queryStringParameters'].get('week')
-        elif event.get('week'):
-            week_number = event.get('week')
-        
+        week_number = getCurrentWeek()
         if week_number is None:
             return {
                 'statusCode': 400,
                 'body': json.dumps({
-                    'error': 'Week number is required',
-                    'message': 'Please provide week number in the event'
+                    'error': 'Cannot determine current week.',
+                    'message': 'Check logs for errors.',
+                    'pool_open': False
                 })
             }
         
@@ -34,7 +54,8 @@ def lambda_handler(event, context):
                 'statusCode': 400,
                 'body': json.dumps({
                     'error': 'Invalid week number',
-                    'message': 'Week must be a valid number'
+                    'message': 'Week must be a valid number',
+                    'pool_open': False
                 })
             }
         
@@ -48,12 +69,16 @@ def lambda_handler(event, context):
         # Check if item exists and return poolOpen value
         if 'Item' in response:
             pool_open = response['Item'].get('poolOpen', False)
+            if pool_open == True:
+                logger.info(f"Week {week_number} pool is OPEN")
+            else:
+                logger.info(f"Week {week_number} pool is CLOSED")
             
             return {
                 'statusCode': 200,
                 'body': json.dumps({
                     'week': week_number,
-                    'poolOpen': pool_open
+                    'pool_open': pool_open
                 })
             }
         else:
@@ -62,7 +87,7 @@ def lambda_handler(event, context):
                 'body': json.dumps({
                     'error': f'Configuration for week {week_number} not found',
                     'week': week_number,
-                    'poolOpen': False
+                    'pool_open': False
                 })
             }
             
@@ -83,3 +108,6 @@ def lambda_handler(event, context):
                 'error': 'Internal server error'
             })
         }
+
+def lambda_handler(event, context):
+    return app.resolve(event, context)

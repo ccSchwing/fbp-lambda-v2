@@ -439,24 +439,36 @@ Resources:
             Method: OPTIONS
             PayloadFormatVersion: '2.0'
 
-  GetPoolOpenEvent:
+  GetPoolOpen:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/GetPoolOpen/src/
-      Handler: GetPoolOpenEvent.lambda_handler
+      Handler: GetPoolOpen.lambda_handler
       Runtime: python3.14
       Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
         - DynamoDBReadPolicy:
             TableName: !Ref FBPConfigTableName
       Environment:
         Variables:
           FBPConfigTableName: !Ref FBPConfigTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+      Layers:
+        - !Ref FBPLibLayer
       Events:
         GetPoolOpen:
           Type: HttpApi
           Properties:
+            ApiId: !Ref MyHttpApi
             Path: /getPoolOpen
             Method: GET
+        GetPoolOpenOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getPoolOpen
+            Method: OPTIONS
   GetPoolConfig:
     Type: AWS::Serverless::Function
     Properties:
@@ -811,9 +823,10 @@ Outputs:
       Name: !Sub ${AWS::StackName}-GetFBPPicksPythonApi
   GetPoolOpenFunction:
     Description: GetPoolOpen Lambda Function ARN
-    Value: !GetAtt GetPoolOpenEvent.Arn
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getPoolOpen
     Export:
-      Name: !Sub ${AWS::StackName}-GetPoolOpenApi
+      Name: !Sub "${AWS::StackName}-GetPoolOpenFunctionArn"
+
   GetPoolConfigFunction:
     Description: GetPoolConfig Lambda Function ARN
     Value: !GetAtt GetPoolConfig.Arn

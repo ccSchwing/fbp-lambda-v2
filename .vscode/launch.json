@@ -2,6 +2,23 @@
   "version": "0.2.0",
   "configurations": [
       {
+      "name": "Python: Local Invoke and Debug GetPoolOpenEvent",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Debug GetPoolOpenEvent",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetPoolOpen/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+      {
       "name": "Python: Local Invoke and Debug EmailForwarding",
       "type": "debugpy",
       "request": "attach",

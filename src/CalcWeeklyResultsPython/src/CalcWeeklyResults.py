@@ -20,7 +20,7 @@ to determine the number of correct and incorrect picks for each user for the wee
 
 logger = logging.getLogger()
 logger.info("Initializing CalcWeeklyResultsPython Lambda function")  # Log initialization message
-logger.setLevel(logging.INFO)
+logger.setLevel(level=logging.INFO)
 
 USERS_TABLE_NAME = os.environ.get('FBPUsersTableName', 'FBP-Users')
 logger.info(f"Using DynamoDB table: {USERS_TABLE_NAME}")  # Log the table name being used
