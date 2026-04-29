@@ -1,6 +1,27 @@
 {
   "version": "2.0.0",
   "tasks": [
+    {
+      "label": "Debug GetStandings",
+      "type": "shell",
+      "command": "sam build -t min.yaml GetStandings && sam local invoke -t .aws-sam/build/template.yaml GetStandings --event events/getStandings.json --env-vars ${workspaceFolder}/.vscode/debug-env.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": [
+          {
+            "regexp": "^(x)(\\b)(x)$",
+            "file": 1,
+            "location": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building image",
+          "endsPattern": "Debugging will proceed"
+        }
+      }
+    },
         {
       "label": "Debug GetPoolOpenEvent",
       "type": "shell",

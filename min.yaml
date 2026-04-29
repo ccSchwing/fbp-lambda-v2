@@ -163,6 +163,43 @@ Resources:
             Method: OPTIONS
             PayloadFormatVersion: '2.0'
 
+  GetStandings:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/GetStandings/src/
+      Handler: GetStandings.lambda_handler
+      Runtime: python3.14
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPUsersTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPConfigTableName
+
+      Environment:
+        Variables:
+          FBPUsersTableName: !Ref FBPUsersTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+          FBPConfigTableName: !Ref FBPConfigTableName
+      Layers:
+        - !Ref FBPLibLayer
+      Events:
+        GetStandingsPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getStandings
+            Method: POST
+            PayloadFormatVersion: '2.0'
+        GetListForEmailOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getListForEmailStandings
+            Method: OPTIONS
+            PayloadFormatVersion: '2.0'
+ 
   GetListForEmail:
     Type: AWS::Serverless::Function
     Properties:
@@ -768,6 +805,14 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-SendEmailApi
 
+  GetStandingsFunction:
+    Description: GetStandings Lambda Function ARN
+    Value: !GetAtt GetStandings.Arn
+  GetStandingsApi:
+    Description: GetStandings API Endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getStandings
+    Export:
+      Name: !Sub ${AWS::StackName}-GetStandingsApi
   GetListForEmailFunction:
     Description: GetListOfEmails Lambda Function ARN
     Value: !GetAtt GetListForEmail.Arn
