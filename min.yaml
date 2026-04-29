@@ -185,18 +185,18 @@ Resources:
       Layers:
         - !Ref FBPLibLayer
       Events:
-        GetStandingsPost:
+        GetStandingsGet:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /getStandings
-            Method: POST
+            Method: GET
             PayloadFormatVersion: '2.0'
-        GetListForEmailOptions:
+        GetStandingsOptions:
           Type: HttpApi
           Properties:
             ApiId: !Ref MyHttpApi
-            Path: /getListForEmailStandings
+            Path: /getStandings
             Method: OPTIONS
             PayloadFormatVersion: '2.0'
  
@@ -227,7 +227,7 @@ Resources:
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /getListForEmail
-            Method: POST
+            Method: GET
             PayloadFormatVersion: '2.0'
         GetListForEmailOptions:
           Type: HttpApi

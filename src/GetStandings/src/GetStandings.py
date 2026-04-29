@@ -1,10 +1,10 @@
 import os
 import json
-from decimal import Decimal
 import boto3
 import logging
 from botocore.exceptions import ClientError
-from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
+from decimal import Decimal
+from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, Response
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from fbplib.getCurrentWeek import getCurrentWeek
 from fbplib.fbpLog import fbpLog
@@ -39,27 +39,27 @@ def getStandings():
         if week_number is None:
             fbpLog("fbpadmin@my-fbp.com", "GetStandings", "Cannot determine week.", "ERROR")
             logger.error("Cannot determine week.")
-            return {
-                'statusCode': 400,
-                'body': json.dumps({
+            return Response (
+                status_code=400,
+                content_type="application/json",
+                body=json.dumps({
                     'error': 'Cannot determine current week.',
-                    'message': 'Check logs for errors.',
-                    'pool_open': False
+                    'message': 'Check logs for errors.'
                 })
-            }
+            )
         
         # Convert to integer if it's a string
         try:
             week_number = int(week_number)
         except (ValueError, TypeError):
-            return {
-                'statusCode': 400,
-                'body': json.dumps({
+            return Response (
+                status_code=200,
+                content_type="application/json",
+                body=json.dumps({
                     'error': 'Invalid week number',
-                    'message': 'Week must be a valid number',
-                    'pool_open': False
+                    'message': 'The week number could not be converted to an integer.'
                 })
-            }
+            )
         
         try:
             logger.info(f"Scanning DynamoDB table {USERS_TABLE_NAME} for current week {week_number}")# Query DynamoDB table
@@ -68,54 +68,59 @@ def getStandings():
             )
             logger.info(f"Retrieved data from DynamoDB: {response}")
             items = response.get('Items', [])
+            logger.info(f"Items retrieved: {items}")
             items.sort(key=lambda x: x.get('totalCorrectPicks', Decimal(0)), reverse=True)
 
             fbpLog("fbpadmin@my-fbp.com", "GetStandings", "Retrieved Standings","INFO")
-            return {
-                'statusCode': 200,
-                'body': json.dumps({
-                'week': week_number,
-                'items': items
-            })
-            }
+            return Response (
+                status_code=200,
+                content_type="application/json",
+                body=json.dumps(items, default=lambda x: int(x) if isinstance(x, Decimal) else str(x))
+            )
         except ClientError as e:
             fbpLog("fbpadmin@my-fbp.com", "GetStandings", f"Exception: {e}","ERROR")
             logger.error(f"DynamoDB Error: {e}")
-            return {
-               'statusCode': 500,
-                'body': json.dumps({
-                    'error': 'DynamoDB error',
+            return Response (
+                500,
+                content_type="application/json",
+                body=json.dumps({
+                    'error': 'Database error',
                     'details': str(e)
                 })
-            } 
+            )
         except Exception as e:
             fbpLog("fbpadmin@my-fbp.com", "GetStandings", f"Exception: {e}","ERROR")
             logger.error(f"Unexpected error: {e}")
-            return {
-                'statusCode': 500,
-                'body': json.dumps({
+
+            return Response (
+                status_code=500,
+                content_type="application/json",
+                body=json.dumps({
                     'error': 'Internal server error',
                     'message': str(e)
                 })
-            }
+            )
         
     except ClientError as e:
         print(f"DynamoDB Error: {e}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({
+        return Response (
+            status_code=500,
+            content_type="application/json",
+            body=json.dumps({
                 'error': 'Database error',
                 'details': str(e)
             })
-        }
+        )
     except Exception as e:
         print(f"Unexpected error: {e}")
-        return {
-            'statusCode': 500,
-            'body': json.dumps({
-                'error': 'Internal server error'
+        return Response (
+            status_code=500,
+            content_type="application/json",
+            body=json.dumps({
+                'error': 'Internal server error',
+                'message': 'Unable to process request at this time.'
             })
-        }
+        )
 
 def lambda_handler(event, context):
     return app.resolve(event, context)
