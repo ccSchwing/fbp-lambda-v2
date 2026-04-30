@@ -53,7 +53,23 @@
       ]
     },
     {
-      "name": "Python: Local Invoke and Debug SendEmail",
+      "name": "Python: Attach to SendEmail",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to SendEmail",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/SendEmail/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
       "type": "debugpy",
       "request": "attach",
       "connect": {

@@ -51,16 +51,16 @@ Resources:
       Description: Shared FBP Python utility library
       ContentUri: src/FBPLib-Layer/
       CompatibleRuntimes:
-        - python3.14
+        - python3.12
     Metadata:
-      BuildMethod: python3.14
+      BuildMethod: python3.12
   EmailForwarding:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${AWS::StackName}-email-forwarder"
       CodeUri: src/EmailForwarding/src
       Handler: EmailForwarding.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       MemorySize: 512
       Environment:
         Variables:
@@ -138,7 +138,7 @@ Resources:
     Properties:
       CodeUri: src/SendEmail/src/
       Handler: SendEmail.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       # SES stuff
       Role: 
         Fn::GetAtt:
@@ -168,7 +168,7 @@ Resources:
     Properties:
       CodeUri: src/GetStandings/src/
       Handler: GetStandings.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref FBPUsersTableName
@@ -205,7 +205,7 @@ Resources:
     Properties:
       CodeUri: src/GetListForEmail/src/
       Handler: GetListForEmail.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref FBPUsersTableName
@@ -242,7 +242,7 @@ Resources:
     Properties:
       CodeUri: src/GetFBPEmailAndDisplayName/src/
       Handler: GetFBPEmailAndDisplayName.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref FBPUsersTableName
@@ -276,7 +276,7 @@ Resources:
     Properties:
       CodeUri: src/UpdateWeeklyResults/src/
       Handler: UpdateWeeklyResults.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPUsersTableName
@@ -321,7 +321,7 @@ Resources:
     Properties:
       CodeUri: src/CalcWeeklyResultsPython/src/
       Handler: CalcWeeklyResults.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPUsersTableName
@@ -366,7 +366,7 @@ Resources:
     Properties:
       CodeUri: src/GetWeeklyResultsPython/src/
       Handler: GetWeeklyResults.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPUsersTableName
@@ -408,7 +408,7 @@ Resources:
     Properties:
       CodeUri: src/SaveFBPPicksPython/src/
       Handler: SaveFBPPicks.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPLogsTableName
@@ -444,7 +444,7 @@ Resources:
     Properties:
       CodeUri: src/GetPickSheetPython/src/
       Handler: GetPickSheet.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       MemorySize: 1024
       Policies:
         - DynamoDBCrudPolicy:
@@ -481,7 +481,7 @@ Resources:
     Properties:
       CodeUri: src/GetPoolOpen/src/
       Handler: GetPoolOpen.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPLogsTableName
@@ -511,7 +511,7 @@ Resources:
     Properties:
       CodeUri: src/GetPoolOpen/src/
       Handler: GetPoolConfig.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref FBPConfigTableName
@@ -554,7 +554,7 @@ Resources:
     Properties:
       CodeUri: src/SetPoolStatus/src/
       Handler: SetPoolStatus.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPConfigTableName
@@ -587,7 +587,7 @@ Resources:
     Properties:
       CodeUri: src/SetPoolStatus/src/
       Handler: SetPoolStatus.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPConfigTableName
@@ -617,7 +617,7 @@ Resources:
     Properties:
       CodeUri: src/GetFBPUser-Python/src/
       Handler: GetFBPUser.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref FBPUsersTableName
@@ -646,7 +646,7 @@ Resources:
     Properties:
       CodeUri: src/AddOrUpdateFBPUser/src/
       Handler: AddOrUpdateFBPUser.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPUsersTableName
@@ -675,7 +675,7 @@ Resources:
     Properties:
       CodeUri: src/AddOrUpdateFBPUser/src/
       Handler: AddOrUpdateFBPUser.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPUsersTableName
@@ -704,7 +704,7 @@ Resources:
     Properties:
       CodeUri: src/GetFBPPicksPython/src/
       Handler: GetFBPPicksPython.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref FBPConfigTableName
@@ -733,7 +733,7 @@ Resources:
     Properties:
       CodeUri: src/GetAllFBPPicksPython/src/
       Handler: GetAllFBPPicks.lambda_handler
-      Runtime: python3.14
+      Runtime: python3.12
       Architectures:
         - x86_64
       Layers:

@@ -93,22 +93,21 @@ def sendTemplatedEmail():
     items= []
     match templateName:
         case "WelcomeEmailTemplate":
-            logger.info("Processing request for grid sheet")
+            logger.info("Processing request for Welcome Email")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for Welcome Email", "INFO")
-            # Pass the dynamoDB attribute name you want to work with.
             items= sendEmailWithTemplate(email, firstName,templateName)
-        case "picks":
+        case "PickSheetTemplate":
             logger.info("Processing request for picks sheet")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for picks sheet", "INFO")
-            # Pass the dynamoDB attribute name you want to work with.
-        case "gridSheet":
+            items= sendEmailWithTemplate(email, firstName,templateName)
+        case "GridSheetTemplate":
+            logger.info("Processing request for grid sheet")
+            fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for reminders", "INFO")
+            items= sendEmailWithTemplate(email, firstName,templateName)
+        case "ReminderEmailTemplate":
             logger.info("Processing request for reminders")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for reminders", "INFO")
-            # Pass the dynamoDB attribute name you want to work with.
-        case "reminders":
-            logger.info("Processing request for reminders")
-            fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for reminders", "INFO")
-            # Pass the dynamoDB attribute name you want to work with.
+            items= sendEmailWithTemplate(email, firstName,templateName)
         case _:
             logger.error("Invalid request type")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Invalid request type", "ERROR")
@@ -133,17 +132,18 @@ def sendTemplatedEmail():
         
 
 def sendEmailWithTemplate(email, firstName, templateName):
+    logger.info(f"Sending email to: {email} and firstName: {firstName} with template: {templateName}")  # Log the email and template being used
     ses = boto3.client('ses', region_name='us-east-1')
     try:
         response = ses.send_templated_email(
-            Source="fbpadmin@fbp-email.my-fbp.com",
+            Source="fbpadmin@my-fbp.com",
             Destination={
                 'ToAddresses': [
                     email,
                 ],
             },
             Template=templateName,
-            TemplateData=json.dumps({'firstName': firstName})
+            TemplateData=json.dumps({'firstName': firstName, 'email': email})
         )
         return response
     except ClientError as e:
