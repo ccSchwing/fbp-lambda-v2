@@ -1,6 +1,24 @@
 {
   "version": "0.2.0",
   "configurations": [
+      {
+      "name": "Python: Local Invoke and Debug GetAllFBPPicksPython",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Debug GetAllFBPPicksPython",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetAllFBPPicksPython/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+
     {
       "name": "Python: Local Invoke and Debug GetStandings",
       "type": "debugpy",

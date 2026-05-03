@@ -1,4 +1,5 @@
 from ast import List
+import email
 import json
 import os
 from typing import Any
@@ -25,8 +26,8 @@ logger.info("JUNK!!! Lambda function initialized successfully")  # Log successfu
 logger.info("JUNK!!! Lambda function initialized successfully")  # Log successful initialization
 
 
-# USERS_TABLE_NAME = os.environ.get('FBPUsersTableName', 'FBP-Users')
-# logger.info(f"Using DynamoDB table: {USERS_TABLE_NAME}")  # Log the table name being used
+USERS_TABLE_NAME = os.environ.get('FBPUsersTableName', 'FBP-Users')
+logger.info(f"Using DynamoDB table: {USERS_TABLE_NAME}") 
 fbpLog("fbpadmin@my-fbp.com", "SendEmail", "Lambda function initialized", "INFO")
 
 cors_config = CORSConfig(
@@ -59,16 +60,13 @@ def sendTemplatedEmail():
         }
     # Get the request body and see what the request is for.
     body=app.current_event.json_body
+    # instead of passing the email target, querying the FBP-Users
+    # to get the email addresses that have signed up for the particular template.
+    # For New Users, we NEED the email address. So:
     email=body.get('email')
-    logger.info(f"the email is: {email}")
-    if not email:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({
-                'error': 'Invalid request type',
-                'message': 'email address not present:  Please provide a valid request type (email, firstName, messageType)'
-            })
-        } 
+    # If email is None, it's okay because the other templates don't require the email address to be passed in. 
+    # They will pull the email address from the FBP-Users table based on the template they are signed up for.
+    #  But for the WelcomeEmailTemplate, we need the email address to send the welcome email to the new user. So if the template is WelcomeEmailTemplate and the email is None, we will return an error message. 
     firstName=body.get('firstName')
     logger.info(f"the firstName is: {firstName}")
     if not firstName:
@@ -79,7 +77,10 @@ def sendTemplatedEmail():
                 'message': 'firstName not present:  Please provide a valid request type (email, firstName, messageType)'
             })
         }
+
+    # You should check to see if the template is in SES, if not return an error message. 
     templateName=body.get('templateName')
+
     logger.info(f"the templateName is: {templateName}")
     if not templateName:
         return {
@@ -99,15 +100,41 @@ def sendTemplatedEmail():
         case "PickSheetTemplate":
             logger.info("Processing request for picks sheet")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for picks sheet", "INFO")
-            items= sendEmailWithTemplate(email, firstName,templateName)
+            table=boto3.resource('dynamodb').Table(USERS_TABLE_NAME)
+            emailAddrs= table.scan(ProjectionExpression="email, firstName")
+            FilterExpression = boto3.dynamodb.conditions.Attr('emailPickSheet').eq(True)
+            if emailAddrs:
+                emailAddrs= table.scan(ProjectionExpression="email, firstName", FilterExpression=FilterExpression)['Items']
+                for addr in emailAddrs:
+                    email=addr.get('email')
+                    firstName=addr.get('firstName')
+                    items= sendEmailWithTemplate(email, firstName,templateName)
         case "GridSheetTemplate":
             logger.info("Processing request for grid sheet")
-            fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for reminders", "INFO")
-            items= sendEmailWithTemplate(email, firstName,templateName)
+            fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for gridsheet", "INFO")
+            table=boto3.resource('dynamodb').Table(USERS_TABLE_NAME)
+            logger.info(f"Scanning DynamoDB table: {USERS_TABLE_NAME} for users with emailGridSheet set to True")
+            emailAddrs= table.scan(ProjectionExpression="email, firstName")
+            FilterExpression = boto3.dynamodb.conditions.Attr('emailGridSheet').eq(True)
+            if emailAddrs:
+                emailAddrs= table.scan(ProjectionExpression="email, firstName", FilterExpression=FilterExpression)['Items']
+                for addr in emailAddrs:
+                    email=addr.get('email')
+                    firstName=addr.get('firstName')
+                    items= sendEmailWithTemplate(email, firstName,templateName)
         case "ReminderEmailTemplate":
             logger.info("Processing request for reminders")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for reminders", "INFO")
-            items= sendEmailWithTemplate(email, firstName,templateName)
+            table=boto3.resource('dynamodb').Table(USERS_TABLE_NAME)
+            logger.info(f"Scanning DynamoDB table: {USERS_TABLE_NAME} for users with emailReminders set to True")
+            emailAddrs= table.scan(ProjectionExpression="email, firstName")
+            FilterExpression = boto3.dynamodb.conditions.Attr('emailReminders').eq(True)
+            if emailAddrs:
+                emailAddrs= table.scan(ProjectionExpression="email, firstName", FilterExpression=FilterExpression)['Items']
+                for addr in emailAddrs:
+                    email=addr.get('email')
+                    firstName=addr.get('firstName')
+                    items= sendEmailWithTemplate(email, firstName,templateName)
         case _:
             logger.error("Invalid request type")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Invalid request type", "ERROR")

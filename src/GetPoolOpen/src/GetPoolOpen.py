@@ -1,8 +1,10 @@
+from calendar import week
 import json
 from multiprocessing import pool
 import re
 import boto3
 import logging
+from decimal import Decimal
 from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
@@ -73,7 +75,9 @@ def getPoolStatus():
                 logger.info(f"Week {week_number} pool is OPEN")
             else:
                 logger.info(f"Week {week_number} pool is CLOSED")
-            
+            week_number = response['Item'].get('Week', week_number)            
+            if isinstance(week_number, Decimal):
+                week_number = int(week_number)
             return {
                 'statusCode': 200,
                 'body': json.dumps({
