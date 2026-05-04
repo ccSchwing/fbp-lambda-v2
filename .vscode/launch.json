@@ -36,6 +36,23 @@
         }
       ]
     },
+    {
+      "name": "Python: Attach to GetFBPPicks",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to GetFBPPicks",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetFBPPicksPython/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
       {
       "name": "Python: Local Invoke and Debug GetPoolOpenEvent",
       "type": "debugpy",

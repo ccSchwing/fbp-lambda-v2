@@ -1,5 +1,7 @@
+from calendar import week
 import json
 import os
+from webbrowser import get
 import boto3
 import logging
 from decimal import Decimal
@@ -87,27 +89,36 @@ def getPicksForUser():
                 'message': 'Please provide email address in the event'
             })
         )
-    item = getPicks(email)
+    picksData = getPicks(email)
+
+    week = getCurrentWeek()
+    week=int(week) if week is not None else None
+    if picksData is not None and 'week' in picksData and int(picksData['week']) != int(week):
+        logger.info(f"User {email} has picks for week {picksData['week']}, but current week is {week}. Returning empty picks.")
+        picksData['picks'] = []
+        picksData['tieBreaker'] = 0
     
-    if item:
-        # Convert common top-level numeric fields for readability.
-        if 'week' in item:
-            item['week'] = int(item['week'])
-        if 'tieBreaker' in item:
-            item['tieBreaker'] = int(item['tieBreaker'])
+    if picksData is not None:
+
+        # The "normal" case is where the week is the current week,
+        # and the user has made not picks yet.
+        # so return what you find.
+
+        if 'tieBreaker' in picksData:
+            picksData['tieBreaker'] = int(picksData['tieBreaker'])
         return Response(
             status_code=200,
             content_type="application/json",
             body=json.dumps({
-                'email': item.get('email'),
-                'displayName': item.get('displayName'),
-                'picks': item.get('picks'),
-                'tieBreaker': item.get('tieBreaker'),
-                'week': item.get('week')
+                'email': picksData.get('email'),
+                'displayName': picksData.get('displayName'),
+                'picks': picksData.get('picks'),
+                'tieBreaker': picksData.get('tieBreaker'),
+                'week': week
             }, default=decimal_default)
         )
     else:
-        logger.info(f"User not found: {email}")
+        logger.error(f"User not found: {email}")
         fbpLog("fbpadmin@my-fbp-com", "GetFBPPicksPython", f"User not found: {email}", "ERROR")
         return Response(
             status_code=404,
@@ -122,18 +133,21 @@ def getPicksForUser():
 def getPicks(emailAddress):
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table(FBP_PICKS_TABLE_NAME)
-    week = getCurrentWeek()
     try:
+        # I need to see if there are any picks for the current week.
+        # The week value I get is not important.
+        # I'm going to get the current week after I return from this method.
+
         response = table.get_item(Key={'email': emailAddress})
-        item = response['Item'] if 'Item' in response else None
+        picksData = response['Item'] if 'Item' in response else None
 
         # The primary key lookup is by email; apply week check in code.
-        if item is not None:
-            item_week = item.get('week')
-            if week is None or item_week is None or int(item_week) != int(week):
-                return None
+        if picksData is not None:
+            # item_week = item.get('week')
+            # if week is None or item_week is None or int(item_week) != int(week):
+                # return None
 
-        return item
+            return picksData
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
         return None
