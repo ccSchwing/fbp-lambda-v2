@@ -56,14 +56,15 @@ def saveFBPPicks():
         email = body.get('email')
         picks = body.get('picks')
         tieBreaker = body.get('tieBreaker')
+        
 
         logger.info(f"Extracted email from API Gateway event: {email}")
         logger.info(f"Extracted picks from API Gateway event: {picks}")
         table.update_item(
             Key={'email': email}, 
-            UpdateExpression="SET #picks = :p, #tieBreaker = :t",
-            ExpressionAttributeNames={'#picks': 'picks', '#tieBreaker': 'tieBreaker'},
-            ExpressionAttributeValues={':p': picks, ':t': tieBreaker}
+            UpdateExpression="SET #picks = :p, #tieBreaker = :t, #week = :w",
+            ExpressionAttributeNames={'#picks': 'picks', '#tieBreaker': 'tieBreaker', '#week': 'week'},
+            ExpressionAttributeValues={':p': picks, ':t': tieBreaker, ':w': week}
         )
 
         logger.info(f"Successfully saved picks: {picks} and tieBreaker: {tieBreaker} for email: {email} and week: {week}")
