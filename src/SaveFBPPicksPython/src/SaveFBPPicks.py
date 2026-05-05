@@ -34,6 +34,8 @@ app=APIGatewayHttpResolver(cors=cors_config)
 
 pattern = re.compile(r'^[HA]*$')
 def isValidPickString(s: str) -> bool:
+    if s == "" or s is None:
+        return False
     return bool(pattern.match(s))
 
 @app.post("/saveFBPPicks")
@@ -128,7 +130,7 @@ def validateAndFixFBPPicks():
         noPicks = False
         noTieBreaker = False
 
-        if picks is None:
+        if picks == "" or picks is None:
             noPicks = True
         tieBreaker = body.get('tieBreaker')
         # The tieBreaker is enforced in the UI, so if there is no tieBreaker,
@@ -142,7 +144,7 @@ def validateAndFixFBPPicks():
             existingTieBreaker = existingPicksResponse['Item'].get('tieBreaker')
             if existingPicks is not None:
                 picks = existingPicks
-                noPicks = False
+                noPicks = True if picks == "" else False 
             if existingTieBreaker is not None:
                 tieBreaker = existingTieBreaker
                 noTieBreaker = False
@@ -170,9 +172,8 @@ def validateAndFixFBPPicks():
                 body=json.dumps({'error': 'User not found'})
             )
         user = userResponse['Item']
-        algorithm = user.get('algorithm')
+        algorithm = user.get('defaultAlgorithm')
 
-        defaultPicks = ""
 
 
         FBP_SCHEDULE_TABLE_NAME = os.environ.get('FBPScheduleTableName', '2025-Schedule')
@@ -190,21 +191,25 @@ def validateAndFixFBPPicks():
                     # Replace all ? with A
                     picks = picks.replace("?", "A")
             case "random":
+                defaultPicks = []
                 import random
                 if noPicks:
-                    rNumber = random.uniform(0, 1)
                     for _ in range(17):
+                        rNumber = random.uniform(0, 1)
                         if rNumber > 0.5:
                             defaultPicks += "H"
                         else:
                             defaultPicks += "A"
-                    picks = defaultPicks
+                    picks = "".join(defaultPicks)
                 else:
                     # Replace all ? with a random pick
                     for i, c in enumerate(picks):
                         if c == "?":
                             rNumber = random.uniform(0, 1)
-                            picks[i] = (rNumber > 0.5 and "H" or "A")
+                            defaultPicks += (rNumber > 0.5 and "H" or "A")
+                        else:
+                            defaultPicks += c
+                    picks = "".join(defaultPicks)
                     logger.info(f"Replaced ? with random picks: {picks}")
                     fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Replaced ? with random picks: {picks}", "INFO")
             # For favorites and underdogs we need the schedule from 202X season to determine 
@@ -215,68 +220,58 @@ def validateAndFixFBPPicks():
                 scheduleTable = dynamodb.Table(FBP_SCHEDULE_TABLE_NAME)
                 # Underdog is defined in the DB as either H or A.
                 # Favorite is NOT defined, so scan for it and invert it to get the favorite.
-                schedule= scheduleTable.scan(ProjectionExpression="Week, Underdog")
-                FilterExpression = boto3.dynamodb.conditions.Attr('Underdog')
-                if schedule is None or 'Items' not in schedule:
+                response = scheduleTable.scan(
+                FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
+                )
+                schedule = response.get('Items', [])
+                if not schedule: 
                     logger.error(f"No schedule items found in {FBP_SCHEDULE_TABLE_NAME} table")
                     fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"No schedule items found in {FBP_SCHEDULE_TABLE_NAME} table", "ERROR")
-                    return Response(
-                        status_code=500,
-                        body=json.dumps({'error': 'No schedule items found'})
-                    )
-                if schedule:
-                    schedule= table.scan(ProjectionExpression="Week, Underdog", FilterExpression=FilterExpression)['Items']
-                    logger.error(f"Schedule items found in {FBP_SCHEDULE_TABLE_NAME} table: {schedule}")
-                    fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Schedule items found in {FBP_SCHEDULE_TABLE_NAME} table: {schedule}", "ERROR")
                     return Response(
                         status_code=500,
                         body=json.dumps({'error': 'No schedule items found'})
                     )
                 if noPicks:
                     # For each game in the schedule, determine the favorite and set the pick
-                    defaultPicks = ""
+                    defaultPicks = []
                     for game in schedule:
-                        if game.get('Underdog') == "H":
+                        gameObject = JSON.parse(game)
+                        if gameObject.get('Underdog') == "H":
                             defaultPicks += "A"
-                        elif game.get('Underdog') == "A":
+                        elif gameObject.get('Underdog') == "A":
                             defaultPicks += "H"
-                    picks = defaultPicks
+                    picks = "".join(defaultPicks)
                     logger.info(f"Set picks to favorites: {picks}")
                     fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Set picks to favorites: {picks}", "INFO") 
                 else:
+                    defaultPicks = []
                     # Replace all ? with the favorite
                     for i, c in enumerate(picks):
                         if c == "?":
                             # Find the game in the schedule
                             for game in schedule:
                                 if game.get('Underdog') == "H":
-                                    picks[i] = "A"
+                                    defaultPicks += "A"
                                 elif game.get('Underdog') == "A":
-                                    picks[i] = "H"
+                                    defaultPicks += "H"
+                    picks = "".join(defaultPicks)
                     logger.info(f"Replaced ? with favorites picks: {picks}")
                     fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Replaced ? with favorites picks: {picks}", "INFO")
             case "underdogs":
                 scheduleTable = dynamodb.Table(FBP_SCHEDULE_TABLE_NAME)
                 # Underdog is defined in the DB as either H or A.
-                schedule= scheduleTable.scan(ProjectionExpression="Week, Underdog")
-                FilterExpression = boto3.dynamodb.conditions.Attr('Underdog')
-                if schedule is None or 'Items' not in schedule:
+                response = scheduleTable.scan(
+                FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
+                )
+                schedule = response.get('Items', [])
+                if not schedule:
                     logger.error(f"No schedule items found in {FBP_SCHEDULE_TABLE_NAME} table")
                     fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"No schedule items found in {FBP_SCHEDULE_TABLE_NAME} table", "ERROR")
                     return Response(
                         status_code=500,
                         body=json.dumps({'error': 'No schedule items found'})
                     )
-                if schedule:
-                    schedule= table.scan(ProjectionExpression="Week, Underdog", FilterExpression=FilterExpression)['Items']
-                    logger.error(f"Schedule items found in {FBP_SCHEDULE_TABLE_NAME} table: {schedule}")
-                    fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Schedule items found in {FBP_SCHEDULE_TABLE_NAME} table: {schedule}", "ERROR")
-                    return Response(
-                        status_code=500,
-                        body=json.dumps({'error': 'No schedule items found'})
-                    )
                 if noPicks:
-                    # For each game in the schedule, determine the underdog and set the pick
                     defaultPicks = ""
                     for game in schedule:
                         if game.get('Underdog') == "H":
@@ -287,17 +282,19 @@ def validateAndFixFBPPicks():
                     logger.info(f"Set picks to underdogs: {picks}")
                     fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Set picks to underdogs: {picks}", "INFO")
                 else:
+                    defaultPicks = []
                     # Replace all ? with the underdog
                     for i, c in enumerate(picks):
                         if c == "?":
                             # Find the game in the schedule
                             for game in schedule:
                                 if game.get('Underdog') == "H":
-                                    picks[i] = "H"
+                                    defaultPicks += "H"
                                 elif game.get('Underdog') == "A":
-                                    picks[i] = "A"
-                    logger.info(f"Replaced ? with underdogs picks: {picks}")
-                    fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Replaced ? with underdogs picks: {picks}", "INFO")
+                                    defaultPicks += "A"
+                    picks = "".join(defaultPicks)
+                    logger.info(f"Replaced ? with underdog picks: {picks}")
+                    fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Replaced ? with underdog picks: {picks}", "INFO")                
                 
 
         if noTieBreaker:
@@ -327,7 +324,7 @@ def validateAndFixFBPPicks():
         }
     return {
         'statusCode': 200,
-        'body': json.dumps({'message': f'Successfully validated and fixedß picks: {picks} and tieBreaker: {tieBreaker} for week {week}'}),
+        'body': json.dumps({'message': f'Successfully validated and fixed picks: {picks} and tieBreaker: {tieBreaker} for week {week}'}),
     }
 
 

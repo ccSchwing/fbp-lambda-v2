@@ -88,7 +88,7 @@
    {
       "label": "Attach to SaveFBPPicks",
       "type": "shell",
-      "command": "sam local invoke -t .aws-sam/build/template.yaml SaveFBPPicksPython --event events/fixAndValidateFBPPicks.json --env-vars ${workspaceFolder}/.vscode/debug-env.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0 --force-image-build",
+      "command": "sam build -t min.yaml SaveFBPPicksPython && sam local invoke -t .aws-sam/build/template.yaml SaveFBPPicksPython --event events/fixAndValidateFBPPicks.json --env-vars ${workspaceFolder}/.vscode/debug-env.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0 --force-image-build",
       "isBackground": true,
       "problemMatcher": {
         "pattern": [
@@ -109,7 +109,7 @@
    {
       "label": "Attach to GetFBPPicks",
       "type": "shell",
-      "command": "sam local invoke -t .aws-sam/build/template.yaml GetFBPPicksPython --event events/GetFBPPicksPython.json --env-vars ${workspaceFolder}/.vscode/debug-env.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0 --force-image-build",
+      "command": "sam build -t min.yaml GetFBPPicksPython && sam local invoke -t .aws-sam/build/template.yaml GetFBPPicksPython --event events/GetFBPPicksPython.json --env-vars ${workspaceFolder}/.vscode/debug-env.json -d 5678 --debugger-path ${workspaceFolder}/.debugger --debug-args '/tmp/lambci_debug_files/debugpy --listen 0.0.0.0:5678 --wait-for-client' --container-host-interface 0.0.0.0 --force-image-build",
       "isBackground": true,
       "problemMatcher": {
         "pattern": [
