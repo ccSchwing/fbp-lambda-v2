@@ -699,6 +699,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPUsersTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPPicksTableName
         - DynamoDBReadPolicy:
             TableName: !Ref FBPConfigTableName
         - DynamoDBCrudPolicy:
@@ -706,6 +708,7 @@ Resources:
       Environment:
         Variables:
           FBPUsersTableName: !Ref FBPUsersTableName
+          FBPPicksTableName: !Ref FBPPicksTableName
           FBPLogsTableName: !Ref FBPLogsTableName
           FBPConfigTableName: !Ref FBPConfigTableName
       Events:

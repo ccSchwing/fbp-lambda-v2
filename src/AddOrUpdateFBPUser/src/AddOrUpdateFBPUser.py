@@ -3,9 +3,10 @@ import os
 import boto3
 import logging
 from botocore.exceptions import ClientError
-from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
+from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, Response
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from fbplib.fbpLog import fbpLog
+from fbplib.getCurrentWeek import getCurrentWeek
 
 
 '''
@@ -20,6 +21,10 @@ USERS_TABLE_NAME = os.environ.get('FBPUsersTableName', 'FBP-Users')
 logger.info(f"Using DynamoDB table: {USERS_TABLE_NAME}")  # Log the table name being used
 fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "Lambda function initialized", "INFO")
 
+PICKS_TABLE_NAME = os.environ.get('FBPPicksTableName', 'FBP-Picks')
+logger.info(f"Using DynamoDB table: {PICKS_TABLE_NAME}")  # Log the table name being used
+fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"Using DynamoDB table: {PICKS_TABLE_NAME}", "INFO")
+
 cors_config = CORSConfig(
     allow_origin="*",  # Or specify your domain like "https://yourdomain.com"
     allow_headers=["Content-Type", "X-Amz-Date", "Authorization", "X-Api-Key", "X-Amz-Security-Token"],
@@ -29,7 +34,7 @@ cors_config = CORSConfig(
 
 app=APIGatewayHttpResolver(cors=cors_config)
 
-#  THe function below is the main logic for the lambda function.
+#  The function below is the main logic for the lambda function.
 #  It will parse the email address from the event and then call
 #  the updateFBPUserData function to update the user information in DynamoDB.
 #  Finally, it will return the updated user information in the response.
@@ -245,16 +250,65 @@ def addFBPUserData(request_body):
                 'isPaidUser': bool(request_body.get('isPaidUser'))
             }
         )
-        return response
+        # return response
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", f"DynamoDB Error: {e}", "ERROR")
-        return None
+        return Response(
+            status_code=500,
+            body=json.dumps({'error': f'Failed to add user data for email {request_body.get("email")}'})
+        )
     except Exception as e:
         fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", f"Unexpected error: {e}", "ERROR")
         logger.error(f"Unexpected error: {e}")
-        return None
+        return Response(
+            status_code=500,
+            body=json.dumps({'error': f'Unexpected error occurred for email {request_body.get("email")}'})
+        )
 
+    # Now we need to add the entry into the FBP_PICKS_TABLE_NAME.
+    week=getCurrentWeek()
+    pickTable = dynamodb.Table(PICKS_TABLE_NAME)
+    try:
+        response = pickTable.put_item(
+            Item={
+                'email': request_body.get('email'),
+                'displayName': request_body.get('displayName'),
+                'week': week,
+                'picks': "",
+                'tieBreaker': 0
+            }
+        )
+        return Response(
+            status_code=200,
+            body=json.dumps({
+                'email': request_body.get('email'),
+                'defaultAlgorithm': request_body.get('defaultAlgorithm'),
+                'displayName': request_body.get('displayName'),
+                'emailGridSheet': request_body.get('emailGridSheet'),
+                'emailPickSheet': request_body.get('emailPickSheet'),
+                'emailReminders': request_body.get('emailReminders'),
+                'firstName': request_body.get('firstName'),
+                'lastName': request_body.get('lastName'),
+                'isAccountLocked': request_body.get('isAccountLocked'),
+                'isAdmin': request_body.get('isAdmin'),
+                'isPaidUser': request_body.get('isPaidUser')
+            })
+        )
+    except ClientError as e:
+        logger.error(f"DynamoDB Error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", f"DynamoDB Error: {e}", "ERROR")
+        return Response(
+            status_code=500,
+            body=json.dumps({'error': f'Failed to add user picks table entry for email {request_body.get("email")}'})
+        )
+    except Exception as e:
+        fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", f"Unexpected error: {e}", "ERROR")
+        logger.error(f"Unexpected error: {e}")
+        return Response(
+            status_code=500,
+            body=json.dumps({'error': f'Unexpected error occurred for email {request_body.get("email")}'})
+        )
 
 def lambda_handler(event, context):
     return app.resolve(event, context)
