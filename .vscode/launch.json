@@ -37,6 +37,23 @@
       ]
     },
     {
+      "name": "Python: Attach to SaveFBPPicks",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to SaveFBPPicks",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/SaveFBPPicksPython/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
       "name": "Python: Attach to GetFBPPicks",
       "type": "debugpy",
       "request": "attach",
@@ -105,13 +122,9 @@
       ]
     },
     {
+      "name": "Python: Local Invoke and Debug SendEmail",
       "type": "debugpy",
       "request": "attach",
-      "connect": {
-        "host": "localhost",
-        "port": 5678
-      },
-      "preLaunchTask": "Debug SendEmail",
       "postDebugTask": "Cleanup",
       "pathMappings": [
         {

@@ -412,6 +412,8 @@ Resources:
       Runtime: python3.12
       Policies:
         - DynamoDBCrudPolicy:
+            TableName: !Ref FBPScheduleTableName
+        - DynamoDBCrudPolicy:
             TableName: !Ref FBPLogsTableName
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPPicksTableName
@@ -437,6 +439,20 @@ Resources:
           Properties:
             ApiId: !Ref MyHttpApi
             Path: /saveFBPPicks
+            Method: OPTIONS
+            PayloadFormatVersion: '2.0'
+        ValidateAndFixFBPPicksPOST:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /validateAndFixFBPPicks
+            Method: POST
+            PayloadFormatVersion: '2.0'
+        ValidateAndFixFBPPicksOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /validateAndFixFBPPicks
             Method: OPTIONS
             PayloadFormatVersion: '2.0'
 
