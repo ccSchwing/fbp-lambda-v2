@@ -144,6 +144,15 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["GetAllFBPPicksPython"]
 
+[function_build_definitions.a82563a0-a688-4ae3-82b1-8f53f5ec5b72]
+codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/SendSMS/src"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "SendSMS.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["SendSMS"]
+
 [layer_build_definitions.ffb77695-7bbb-459d-ae88-74780ab875c0]
 layer_name = "FBPLibLayer"
 codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/FBPLib-Layer"

@@ -48,67 +48,68 @@ def updateFBPUser():
         if not email:
             logger.warning("Email field is missing in the request body")
             fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "Email field is missing in the request body", "ERROR")
-            return {
-                'statusCode': 400,
-                'body': json.dumps({
+            return Response(
+                status_code=400,
+                body=json.dumps({
                     'error': 'Email address is required',
                     'message': 'Please provide email address in the event'
                 })
-            }
+            )
         logger.info(f"Extracted email from API Gateway event: {email}")
         logger.info(f"Request body: {request_body}")
         if not request_body:
             logger.error("No JSON body found in the request")
             fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "No JSON body found in the request", "ERROR")
-            return {
-                'statusCode': 400,
-                'body': json.dumps({
+            return Response(
+                status_code=400,
+                body=json.dumps({
                     'error': 'Invalid request body',
                     'message': 'Request body seems to be empty or not valid JSON'
                 })
-            }
+            )
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"Unexpected error: {e}", "ERROR")
-        return {
-            'statusCode': 400,
-            'body': json.dumps({
+        return Response(
+            status_code=400,
+            body=json.dumps({
                 'error': 'Invalid request body',
                 'message': 'Request body must be valid JSON with an email field'
             })
-        }
+        )
 
     item = updateFBPUserData(request_body)
     
     if item:
         fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"Updated user data for email: {email}: request_body: {json.dumps(request_body, default=str)}", "INFO")
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'email': item.get('email'),
-                'defaultAlgorithm': item.get('defaultAlgorithm'),
-                'displayName': item.get('displayName'),
-                'emailGridSheet': item.get('emailGridSheet'),
-                'emailPickSheet': item.get('emailPickSheet'),
-                'emailReminders': item.get('emailReminders'),
-                'firstName': item.get('firstName'),
-                'lastName': item.get('lastName'),
-                'isAccountLocked': item.get('isAccountLocked'),
-                'isAdmin': item.get('isAdmin'),
-                'isPaidUser': item.get('isPaidUser'),
-                })
-            }
+        response_data = {
+            'email': item.get('email'),
+            'defaultAlgorithm': item.get('defaultAlgorithm'),
+            'displayName': item.get('displayName'),
+            'emailGridSheet': item.get('emailGridSheet'),
+            'emailPickSheet': item.get('emailPickSheet'),
+            'emailReminders': item.get('emailReminders'),
+            'firstName': item.get('firstName'),
+            'lastName': item.get('lastName'),
+            'isAccountLocked': item.get('isAccountLocked'),
+            'isAdmin': item.get('isAdmin'),
+            'isPaidUser': item.get('isPaidUser')
+        }
+        return Response(
+            status_code=200,
+            body=json.dumps(response_data)
+        )
     else:
-        logger.info(f"User not found: {email}")
+        logger.error(f"User not found: {email}")
         fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"User not found: {email}", "ERROR")
-        return {
-            'statusCode': 404,
-            'body': json.dumps({
+        return Response(
+            status_code=404,
+            body=json.dumps({
                 'error': f'User with email {email} not found',
                 'email': email,
                 })
-            } 
+            ) 
 
 
 
@@ -122,74 +123,49 @@ def addFBPUser():
         if not email:
             logger.warning("Email field is missing in the request body")
             fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "Email field is missing in the request body", "ERROR")
-            return {
-                'statusCode': 400,
-                'body': json.dumps({
+            return Response(
+                status_code=400,
+                body=json.dumps({
                     'error': 'Email address is required',
                     'message': 'Please provide email address in the event'
                 })
-            }
+            )
         logger.info(f"Extracted email from API Gateway event: {email}")
         logger.info(f"Request body: {request_body}")
         if not request_body:
             logger.error("No JSON body found in the request")
             fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "No JSON body found in the request", "ERROR")
-            return {
-                'statusCode': 400,
-                'body': json.dumps({
+            return Response(
+                status_code=400,
+                body=json.dumps({
                     'error': 'Invalid request body',
                     'message': 'Request body seems to be empty or not valid JSON'
                 })
-            }
+            )
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"Unexpected error: {e}", "ERROR")
-        return {
-            'statusCode': 400,
-            'body': json.dumps({
+        return Response(
+            status_code=400,
+            body=json.dumps({
                 'error': 'Invalid request body',
                 'message': 'Request body must be valid JSON with an email field'
             })
-        }
+        )
 
-    item = addFBPUserData(request_body)
+    response = addFBPUserData(request_body)
     
-    if item:
-        fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"Updated user data for email: {email}: request_body: {json.dumps(request_body, default=str)}", "INFO")
-        return {
-            'statusCode': 200,
-            'body': json.dumps({
-                'email': item.get('email'),
-                'defaultAlgorithm': item.get('defaultAlgorithm'),
-                'displayName': item.get('displayName'),
-                'emailGridSheet': item.get('emailGridSheet'),
-                'emailPickSheet': item.get('emailPickSheet'),
-                'emailReminders': item.get('emailReminders'),
-                'firstName': item.get('firstName'),
-                'lastName': item.get('lastName'),
-                'isAccountLocked': item.get('isAccountLocked'),
-                'isAdmin': item.get('isAdmin'),
-                'isPaidUser': item.get('isPaidUser'),
-                })
-            }
-    else:
-        logger.info(f"User not found: {email}")
-        fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"User not found: {email}", "ERROR")
-        return {
-            'statusCode': 404,
-            'body': json.dumps({
-                'error': f'User with email {email} not found',
-                'email': email,
-                })
-            } 
+    return Response(
+        status_code=response.status_code,
+        body=response.body)
 
 
 
         
 
 def updateFBPUserData(request_body):
-    dynamodb = boto3.resource('dynamodb')
+    dynamodb = boto3.resource('dynamodb')  # type: ignore
     table = dynamodb.Table(USERS_TABLE_NAME)
     try:
         response = table.update_item(
@@ -220,7 +196,25 @@ def updateFBPUserData(request_body):
                 ':isPaidUser': bool(request_body.get('isPaidUser'))
             },
         )
-        return response
+        # Now update the FBP_PICKS_TABLE_NAME with the new displayName if it has changed.
+        pickTable = dynamodb.Table(PICKS_TABLE_NAME)
+        try:
+            response = pickTable.update_item(
+                Key={
+                    'email': request_body.get('email')
+                },
+                UpdateExpression="SET displayName = :displayName",
+                ExpressionAttributeValues={
+                    ':displayName': request_body.get('displayName')
+                }
+            )
+        except ClientError as e:
+            logger.error(f"DynamoDB Error: {e}")
+            fbpLog("fbpadmin@my-fbp.com", "UpdateFBPUser", f"DynamoDB Error: {e}", "ERROR")
+            return None
+        # Retrieve the updated item to return
+        get_response = table.get_item(Key={'email': request_body.get('email')})
+        return get_response.get('Item')
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "UpdateFBPUser", f"DynamoDB Error: {e}", "ERROR")
@@ -250,7 +244,6 @@ def addFBPUserData(request_body):
                 'isPaidUser': bool(request_body.get('isPaidUser'))
             }
         )
-        # return response
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", f"DynamoDB Error: {e}", "ERROR")

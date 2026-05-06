@@ -1,0 +1,18 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sms-voice:CreateNotifyConfiguration",
+                "sms-voice:DescribeNotifyConfiguration",
+                "sms-voice:UpdateNotifyConfiguration",
+                "sms-voice:SendNotifyTextMessage",
+                "sms-voice:DescribeNotifyTemplates",
+                "sms-voice:DescribeSpendLimits",
+                "sms-voice:SetNotifyMessageSpendLimitOverride"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

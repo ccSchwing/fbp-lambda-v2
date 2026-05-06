@@ -43,6 +43,16 @@ Parameters:
     Type: String
     Description: Verified SES identity to send from
     Default: fbpadmin@my-fbp.com
+  # Parameters for SMS
+  NotifyConfigId:
+      Type: String
+      Description: AWS End User Messaging Notify Configuration ID
+      Default: nc-1234567890abcdef0
+  DefaultPhoneNumber:
+    Type: String
+    Description: Default phone number for alerts
+    Default: '+17325007427'
+    AllowedPattern: '^\+[1]\d{1,11}$'   # E.164 format, US numbers only
 Resources:
   FBPLibLayer:
     Type: AWS::Serverless::LayerVersion
@@ -93,7 +103,26 @@ Resources:
       Action: lambda:InvokeFunction
       Principal: ses.amazonaws.com
       SourceAccount: !Ref AWS::AccountId
-
+  SendSMS:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/SendSMS/src/
+      Handler: SendSMS.lambda_handler
+      Runtime: python3.12
+      Environment:
+        Variables:
+          NOTIFY_CONFIG_ID: nc-your-actual-config-id
+          DEFAULT_PHONE_NUMBER: +1234567890
+          MY_REGION: us-east-1
+      Policies:
+          - Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                - sms-voice:SendNotifyTextMessage
+                - sms-voice:DescribeNotifyTemplates
+                - sms-voice:DescribeNotifyConfiguration
+                Resource: '*'
   SendEmailRole:
     Type: AWS::IAM::Role
     Properties:
@@ -670,6 +699,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPUsersTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPPicksTableName
         - DynamoDBReadPolicy:
             TableName: !Ref FBPConfigTableName
         - DynamoDBCrudPolicy:
@@ -679,6 +710,7 @@ Resources:
           FBPUsersTableName: !Ref FBPUsersTableName
           FBPLogsTableName: !Ref FBPLogsTableName
           FBPConfigTableName: !Ref FBPConfigTableName
+          FBPPicksTableName: !Ref FBPPicksTableName
       Events:
         UpdateFBPUserPython:
           Type: HttpApi
