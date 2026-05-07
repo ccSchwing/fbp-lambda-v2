@@ -78,6 +78,7 @@ def getFBPUser():
             'body': json.dumps({
                 'email': item.get('email'),
                 'defaultAlgorithm': item.get('defaultAlgorithm'),
+                'defaultTieBreaker': item.get('defaultTieBreaker'),
                 'displayName': item.get('displayName'),
                 'emailGridSheet': item.get('emailGridSheet'),
                 'emailPickSheet': item.get('emailPickSheet'),
@@ -95,9 +96,7 @@ def getFBPUser():
             'statusCode': 404,
             'body': json.dumps({
                 'error': f'User with email {email} not found',
-                'email': email,
-                'name': None,
-                'team': None
+                'email': email
                 })
             } 
 

@@ -182,9 +182,11 @@ def updateFBPUserData(request_body):
                 "lastName = :lastName, "
                 "isAccountLocked = :isAccountLocked, "
                 "isAdmin = :isAdmin, "
-                "isPaidUser = :isPaidUser",
+                "isPaidUser = :isPaidUser, "
+                "defaultTieBreaker = :defaultTieBreaker",
             ExpressionAttributeValues={
                 ':defaultAlgorithm': request_body.get('defaultAlgorithm'),
+                ':defaultTieBreaker': request_body.get('defaultTieBreaker', 49),
                 ':displayName': request_body.get('displayName'),
                 ':emailGridSheet': bool(request_body.get('emailGridSheet')),
                 ':emailPickSheet': bool(request_body.get('emailPickSheet')),
