@@ -177,16 +177,31 @@ def validateAndFixFBPPicks():
 
 
         FBP_SCHEDULE_TABLE_NAME = os.environ.get('FBPScheduleTableName', '2025-Schedule')
+        # need to query the schedule table for the week so that I can get the number
+        # of games for that week and use it as a limit for the picks string.
+        scheduleTable = dynamodb.Table(FBP_SCHEDULE_TABLE_NAME)
+        response = scheduleTable.scan(
+            FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
+        )
+        schedule = response.get('Items', [])
+        if not schedule:
+            logger.error(f"No schedule items found in {FBP_SCHEDULE_TABLE_NAME} table for week {week}")
+            fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"No schedule items found in {FBP_SCHEDULE_TABLE_NAME} table for week {week}", "ERROR")
+            return Response(
+                status_code=500,
+                body=json.dumps({'error': 'No schedule items found'})
+            )
+        numberOfGames = len(schedule)
         match algorithm:
             case "home":
                 if noPicks:
-                    picks = "H" * 17
+                    picks = "H" * numberOfGames
                 else:
                     # Replace all ? with H
                     picks = picks.replace("?", "H")
             case "away":
                 if noPicks:
-                    picks = "A" * 17
+                    picks = "A" * numberOfGames
                 else:
                     # Replace all ? with A
                     picks = picks.replace("?", "A")
@@ -194,7 +209,7 @@ def validateAndFixFBPPicks():
                 defaultPicks = []
                 import random
                 if noPicks:
-                    for _ in range(17):
+                    for _ in range(numberOfGames):
                         rNumber = random.uniform(0, 1)
                         if rNumber > 0.5:
                             defaultPicks += "H"
