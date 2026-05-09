@@ -2,6 +2,7 @@ import json
 import os
 import boto3
 import logging
+from decimal import Decimal
 from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
@@ -26,6 +27,10 @@ cors_config = CORSConfig(
     max_age=86400,  # Cache preflight for 24 hours
     allow_credentials=False
 )
+def decimal_default(obj):
+    if isinstance(obj, Decimal):
+        return int(obj) if obj % 1 == 0 else float(obj)
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 app=APIGatewayHttpResolver(cors=cors_config)
 
@@ -88,7 +93,7 @@ def getFBPUser():
                 'isAccountLocked': item.get('isAccountLocked'),
                 'isAdmin': item.get('isAdmin'),
                 'isPaidUser': item.get('isPaidUser'),
-                })
+                },default=decimal_default)
             }
     else:
         logger.info(f"User not found: {email}")

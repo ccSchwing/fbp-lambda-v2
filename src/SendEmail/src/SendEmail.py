@@ -109,6 +109,19 @@ def sendTemplatedEmail():
                     email=addr.get('email')
                     firstName=addr.get('firstName')
                     items= sendEmailWithTemplate(email, firstName,templateName)
+        case "BetaTestTemplate":
+            logger.info("Processing request for beta test")
+            fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for beta test", "INFO")
+            table=boto3.resource('dynamodb').Table(USERS_TABLE_NAME)
+            emailAddrs= table.scan(ProjectionExpression="email, firstName")
+            FilterExpression = boto3.dynamodb.conditions.Attr('beta').eq(True)
+            if emailAddrs:
+                emailAddrs= table.scan(ProjectionExpression="email, firstName", FilterExpression=FilterExpression)['Items']
+                for addr in emailAddrs:
+                    email=addr.get('email')
+                    firstName=addr.get('firstName')
+                    items= sendEmailWithTemplate(email, firstName,templateName)
+
         case "GridSheetTemplate":
             logger.info("Processing request for grid sheet")
             fbpLog("fbpadmin@my-fbp.com", "GetFBPUser", "Processing request for gridsheet", "INFO")
