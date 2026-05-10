@@ -153,6 +153,15 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["SendSMS"]
 
+[function_build_definitions.6ae40224-dc44-403e-b9e1-284f5e8cbd1d]
+codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/QueryFBPLogs/src"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "QueryFBPLogs.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["QueryFBPLogs"]
+
 [layer_build_definitions.ffb77695-7bbb-459d-ae88-74780ab875c0]
 layer_name = "FBPLibLayer"
 codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/FBPLib-Layer"

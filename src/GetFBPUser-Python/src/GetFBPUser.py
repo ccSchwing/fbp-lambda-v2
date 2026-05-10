@@ -12,7 +12,7 @@ from fbplib.fbpLog import fbpLog
 '''
 This function will return the user information for the given email address in the event.
 '''
-
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger("GetFBPUser")
 logger.info("Initializing GetFBPUser Lambda function")  # Log initialization message
 logger.setLevel(logging.INFO)

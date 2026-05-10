@@ -15,13 +15,12 @@ This function will update the user information for the given email address in th
 logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger()
 logger.info("Initializing AddOrUpdateFBPUser Lambda function")  # Log initialization message
+logger.info("Junk log to test CloudWatch Logs integration")  # Log a junk message to test CloudWatch Logs
 logger.setLevel(logging.INFO)
-
-logger.error("JUNK!!! Initializing AddOrUpdateFBPUser Lambda function")  # Log initialization message
 
 USERS_TABLE_NAME = os.environ.get('FBPUsersTableName', 'FBP-Users')
 logger.info(f"Using DynamoDB table: {USERS_TABLE_NAME}")  # Log the table name being used
-fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "Lambda function initialized", "INFO")
+fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "Lambda function initialized", "ERROR")
 
 PICKS_TABLE_NAME = os.environ.get('FBPPicksTableName', 'FBP-Picks')
 logger.info(f"Using DynamoDB table: {PICKS_TABLE_NAME}")  # Log the table name being used

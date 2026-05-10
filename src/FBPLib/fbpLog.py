@@ -7,6 +7,8 @@ from botocore.exceptions import ClientError
 import logging
 from fbplib import getCurrentWeek
 
+logging.basicConfig(format='%(levelname)s %(message)s')
+logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
 

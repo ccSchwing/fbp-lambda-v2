@@ -163,6 +163,39 @@ Resources:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FBP-Config"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/2025-Log"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FBP-Users"
+  QueryFBPLogs:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/QueryFBPLogs/src/
+      Handler: QueryFBPLogs.lambda_handler
+      Runtime: python3.12
+      Layers:
+        - !Ref FBPLibLayer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPLogsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPConfigTableName
+      Environment:
+        Variables:
+          FBPLogsTableName: !Ref FBPLogsTableName
+          FBPConfigTableName: !Ref FBPConfigTableName
+      Events:
+        QueryFBPLogsPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /queryFBPLogs
+            Method: POST
+            PayloadFormatVersion: '2.0'
+        QueryFBPLogsOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /queryFBPLogs
+            Method: OPTIONS
+            PayloadFormatVersion: '2.0'
+
   SendEmail:
     Type: AWS::Serverless::Function
     Properties:
@@ -839,7 +872,21 @@ Outputs:
     Value: !Ref MyHttpApi
     Export:
       Name: !Sub ${AWS::StackName}-HttpApiId
-
+  QueryFBPLogsFunctionArn:
+    Description: ARN of the QueryFBPLogs Lambda function
+    Value: !GetAtt QueryFBPLogs.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-QueryFBPLogsFunctionArn"
+  QueryFBPLogsFunctionName:
+    Description: Name of the QueryFBPLogs Lambda function
+    Value: !Ref QueryFBPLogs
+    Export:
+      Name: !Sub "${AWS::StackName}-QueryFBPLogsFunctionName" 
+  QueryFBPLogsApi:
+    Description: URL of the QueryFBPLogs API endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/queryFBPLogs
+    Export:
+      Name: !Sub ${AWS::StackName}-QueryFBPLogsApi
   EmailForwardingArn:
     Description: ARN of the email forwarding Lambda function
     Value: !GetAtt EmailForwarding.Arn
@@ -849,7 +896,7 @@ Outputs:
     Description: Name of the email forwarding Lambda function
     Value: !Ref EmailForwarding
     Export:
-      Name: !Sub "${AWS::StackName}-EmailForwardingnName"
+      Name: !Sub "${AWS::StackName}-EmailForwardingName"
 
   SendEmailFunction:
     Description: SendEmail Lambda Function ARN

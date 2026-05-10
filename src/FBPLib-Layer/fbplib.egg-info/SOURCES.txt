@@ -1,5 +1,6 @@
 pyproject.toml
 fbplib/__init__.py
+fbplib/decimalDefault.py
 fbplib/fbpLog.py
 fbplib/getCurrentWeek.py
 fbplib.egg-info/PKG-INFO
