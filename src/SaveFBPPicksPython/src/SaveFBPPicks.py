@@ -17,7 +17,7 @@ from fbplib import getCurrentWeek
 This function will update user picks to the FBP-Picks DynamoDB table 
 for the given email address in the event.
 '''
-
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger()
 logger.info("Initializing SaveFBPPicksPython Lambda function")  # Log initialization message
 logger.setLevel(logging.INFO)
@@ -74,7 +74,7 @@ def saveFBPPicks():
         )
 
         logger.info(f"Successfully saved picks: {picks} and tieBreaker: {tieBreaker} for email: {email} and week: {week}")
-        fbpLog("fbpadmin@my-fbp.com", "SaveFBPPicksPython", f"Successfully saved picks: {picks} and tieBreaker: {tieBreaker} for email: {email} and week: {week}", "INFO")
+        fbpLog(email, "SaveFBPPicksPython", f"Successfully saved picks: {picks} and tieBreaker: {tieBreaker} for week {week}", "INFO")
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "SaveFBPPicksPython", f"DynamoDB Error: {e}", "ERROR")
@@ -115,6 +115,8 @@ def validateAndFixFBPPicks():
     try:
         body = app.current_event.json_body
         if not isinstance(body, dict):
+            fbpLog("fbpadmin@my-fbp.com", "SaveFBPPicksPython", "Request body must be a JSON object", "ERROR")
+            logger.error("Request body must be a JSON object")
             raise ValueError("Request body must be a JSON object")
         logger.info(f"Parsed JSON body: {body}")
         email = body.get('email')
@@ -148,7 +150,7 @@ def validateAndFixFBPPicks():
             if existingTieBreaker is not None:
                 tieBreaker = existingTieBreaker
                 noTieBreaker = False
-        if isValidPickString(picks) and tieBreaker is not None:
+        if isValidPickString(str(picks)) and tieBreaker is not None:
             return Response(
                 status_code=200,
                 body=json.dumps({
@@ -218,7 +220,7 @@ def validateAndFixFBPPicks():
                     picks = "".join(defaultPicks)
                 else:
                     # Replace all ? with a random pick
-                    for i, c in enumerate(picks):
+                    for i, c in enumerate(str(picks)):
                         if c == "?":
                             rNumber = random.uniform(0, 1)
                             defaultPicks += (rNumber > 0.5 and "H" or "A")
@@ -226,7 +228,7 @@ def validateAndFixFBPPicks():
                             defaultPicks += c
                     picks = "".join(defaultPicks)
                     logger.info(f"Replaced ? with random picks: {picks}")
-                    fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Replaced ? with random picks: {picks}", "INFO")
+                    fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"Replaced ? with random picks: {picks}", level="INFO")
             # For favorites and underdogs we need the schedule from 202X season to determine 
             # which team is the favorite and which is the underdog.
             # We will get the schedule from the DynamoDB table and then apply the
@@ -261,7 +263,7 @@ def validateAndFixFBPPicks():
                 else:
                     defaultPicks = []
                     # Replace all ? with the favorite
-                    for i, c in enumerate(picks):
+                    for i, c in enumerate(str(picks)):
                         if c == "?":
                             # Find the game in the schedule
                             for game in schedule:
@@ -271,7 +273,7 @@ def validateAndFixFBPPicks():
                                     defaultPicks += "H"
                     picks = "".join(defaultPicks)
                     logger.info(f"Replaced ? with favorites picks: {picks}")
-                    fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Replaced ? with favorites picks: {picks}", "INFO")
+                    fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"Replaced ? with favorites picks: {picks}", level="INFO")
             case "underdogs":
                 scheduleTable = dynamodb.Table(FBP_SCHEDULE_TABLE_NAME)
                 # Underdog is defined in the DB as either H or A.
@@ -295,11 +297,11 @@ def validateAndFixFBPPicks():
                             defaultPicks += "A"
                     picks = defaultPicks
                     logger.info(f"Set picks to underdogs: {picks}")
-                    fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Set picks to underdogs: {picks}", "INFO")
+                    fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"Set picks to underdogs: {picks}", level="INFO")
                 else:
                     defaultPicks = []
                     # Replace all ? with the underdog
-                    for i, c in enumerate(picks):
+                    for i, c in enumerate(str(picks)):
                         if c == "?":
                             # Find the game in the schedule
                             for game in schedule:
@@ -313,7 +315,8 @@ def validateAndFixFBPPicks():
                 
 
         if noTieBreaker:
-            tieBreaker = random.randint(2, 100)
+            tieBreaker = random.randint(a=21, b=49)
+            fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"Set tieBreaker to random number: {tieBreaker}", level="INFO")
         picksTable.update_item(
             Key={'email': email}, 
             UpdateExpression="SET #picks = :p, #tieBreaker = :t, #week = :w",
@@ -322,10 +325,10 @@ def validateAndFixFBPPicks():
         )
 
         logger.info(f"Successfully validated and fixed picks: {picks} and tieBreaker: {tieBreaker} for email: {email} and week: {week}")
-        fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Successfully validated and fixed picks: {picks} and tieBreaker: {tieBreaker} for email: {email} and week: {week}", "INFO")
+        fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"Successfully validated and fixed picks: {picks} and tieBreaker: {tieBreaker} for week {week}", level="INFO")
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
-        fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"DynamoDB Error: {e}", "ERROR")
+        fbpLog(email="fbpadmin@my-fbp.com", action="method: validateAndFixFBPPicks", details=f"DynamoDB Error: {e}", level="ERROR")
         return{
             'statusCode': 500,
             'body': json.dumps({'error': 'DynamoDB Error'}),

@@ -15,7 +15,6 @@ This function will update the user information for the given email address in th
 logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger()
 logger.info("Initializing AddOrUpdateFBPUser Lambda function")  # Log initialization message
-logger.info("Junk log to test CloudWatch Logs integration")  # Log a junk message to test CloudWatch Logs
 logger.setLevel(logging.INFO)
 
 USERS_TABLE_NAME = os.environ.get('FBPUsersTableName', 'FBP-Users')
@@ -44,11 +43,12 @@ def updateFBPUser():
     logger.info("Handling updateFBPUser request")  # Log entry into the function
     try:
         logger.info(f"Raw event data: {json.dumps(app.current_event.raw_event, default=str)}")  # Log the raw event data
+        fbpLog("fbpadmin@my-fbp.com", "UpdateFBPUser", f"Raw event data: {json.dumps(app.current_event.raw_event, default=str)}", "INFO")
         request_body = app.current_event.json_body
         email = request_body.get('email') if request_body else None
         if not email:
             logger.warning("Email field is missing in the request body")
-            fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "Email field is missing in the request body", "ERROR")
+            fbpLog("fbpadmin@my-fbp.com", "UpdateFBPUser", "Email field is missing in the request body", "ERROR")
             return Response(
                 status_code=400,
                 body=json.dumps({
@@ -60,7 +60,7 @@ def updateFBPUser():
         logger.info(f"Request body: {request_body}")
         if not request_body:
             logger.error("No JSON body found in the request")
-            fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "No JSON body found in the request", "ERROR")
+            fbpLog("fbpadmin@my-fbp.com", "UpdateFBPUser", "No JSON body found in the request", "ERROR")
             return Response(
                 status_code=400,
                 body=json.dumps({
@@ -83,7 +83,7 @@ def updateFBPUser():
     item = updateFBPUserData(request_body)
     
     if item:
-        fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"Updated user data for email: {email}: request_body: {json.dumps(request_body, default=str)}", "INFO")
+        fbpLog("fbpadmin@my-fbp.com", "UpdateFBPUser", f"Updated user data for email: {email}: request_body: {json.dumps(request_body, default=str)}", "INFO")
         response_data = {
             'email': item.get('email'),
             'defaultAlgorithm': item.get('defaultAlgorithm'),
@@ -103,7 +103,7 @@ def updateFBPUser():
         )
     else:
         logger.error(f"User not found: {email}")
-        fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"User not found: {email}", "ERROR")
+        fbpLog("fbpadmin@my-fbp.com", "UpdateFBPUser", f"User not found: {email}", "ERROR")
         return Response(
             status_code=404,
             body=json.dumps({
@@ -123,7 +123,7 @@ def addFBPUser():
         email = request_body.get('email') if request_body else None
         if not email:
             logger.warning("Email field is missing in the request body")
-            fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "Email field is missing in the request body", "ERROR")
+            fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", "Email field is missing in the request body", "ERROR")
             return Response(
                 status_code=400,
                 body=json.dumps({
@@ -135,7 +135,7 @@ def addFBPUser():
         logger.info(f"Request body: {request_body}")
         if not request_body:
             logger.error("No JSON body found in the request")
-            fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", "No JSON body found in the request", "ERROR")
+            fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", "No JSON body found in the request", "ERROR")
             return Response(
                 status_code=400,
                 body=json.dumps({
@@ -146,7 +146,7 @@ def addFBPUser():
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        fbpLog("fbpadmin@my-fbp.com", "AddOrUpdateFBPUser", f"Unexpected error: {e}", "ERROR")
+        fbpLog("fbpadmin@my-fbp.com", "AddFBPUser", f"Unexpected error: {e}", "ERROR")
         return Response(
             status_code=400,
             body=json.dumps({
@@ -272,7 +272,7 @@ def addFBPUserData(request_body):
                 'displayName': request_body.get('displayName'),
                 'week': week,
                 'picks': "",
-                'tieBreaker': 0
+                'tieBreaker': 49        # Default tieBreaker value, can be updated later by the user
             }
         )
         return Response(

@@ -4,6 +4,7 @@ import logging
 import os
 from datetime import datetime
 from botocore.exceptions import ClientError
+from fbplib.fbpLog import fbpLog
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -87,6 +88,7 @@ def lambda_handler(event, context):
                 logger.info(f"Alert sent to {phone}. MessageId: {response['MessageId']}")
                 
             except ClientError as e:
+                fbpLog(email="fbpadmin@my-fbp.com", action="SendSMS", details=f"Failed to send SMS to {phone}: {e}", level="ERROR")
                 results.append({
                     'phone': phone,
                     'status': 'failed',

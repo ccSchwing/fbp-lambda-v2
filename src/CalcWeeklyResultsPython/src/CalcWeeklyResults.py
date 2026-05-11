@@ -17,7 +17,7 @@ It queries the FBP-Schedule table for the current week and updates the Winner fi
 game based on the HomeScore, AwayScore, Spread, and Underdog fields. This is used by the UpdateWeeklyResults function
 to determine the number of correct and incorrect picks for each user for the week.
 '''
-
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger()
 logger.info("Initializing CalcWeeklyResultsPython Lambda function")  # Log initialization message
 logger.setLevel(level=logging.INFO)

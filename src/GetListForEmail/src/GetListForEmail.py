@@ -16,7 +16,7 @@ This function will return all email addresses and displayname for the users in t
 That data will be used by admin to view/modify profiles for users in the system.
 This is GET with no parameters, it will return all users in the system with their email and display name.
 '''
-
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger("GetFBPUser")
 logger.info("Initializing GetFBPUser Lambda function")  # Log initialization message
 logger.setLevel(logging.INFO)

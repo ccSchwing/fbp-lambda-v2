@@ -13,16 +13,14 @@ from fbplib.getCurrentWeek import getCurrentWeek
 
 
 '''
-This function calcualates the weekly results for each user based on their picks and the actual game results for the week.
-
+This function calcualates the weekly results for each user based on
+their picks and the actual game results for the week.
 '''
 
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger()
 logger.info("Initializing UpdateWeeklyResults Lambda function")  # Log initialization message
 logger.setLevel(logging.INFO)
-
-
-
 
 cors_config = CORSConfig(
     allow_origin="*",
@@ -156,7 +154,7 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
         return []
 
     scheduleItems  = scheduleResults.get('Items', [])
-    scheduleItems = sorted(scheduleItems, key=lambda x: x['GameId'])  # Sort by GameId to ensure correct order
+    scheduleItems = sorted(scheduleItems, key=lambda x: str(x['GameId']))  # Sort by GameId to ensure correct order
     gameResults = {}
     index = 0
     for game in scheduleItems:
@@ -208,9 +206,7 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
         except ClientError as e:
             logger.error(f"DynamoDB Error: {e}")
             fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", 
-                   f"Failed to get displayName from DynamoDB: {e}", "ERROR")
-        # correctPicks=picks['CorrectPicks']
-        # incorrectPicks=picks['IncorrectPicks']
+                   f"Failed to get displayName for {email} from DynamoDB: {e}", "ERROR")
         try:
             resultsTable.update_item(
             Key={'email': email},

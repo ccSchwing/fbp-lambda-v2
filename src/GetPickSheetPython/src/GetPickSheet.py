@@ -11,7 +11,7 @@ from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from fbplib.fbpLog import fbpLog
 from fbplib.getCurrentWeek import getCurrentWeek
 
-
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -50,6 +50,13 @@ def getPickSheet() -> dict[str, Any]:
     body = app.current_event.json_body or {}
 
     week=getCurrentWeek()
+    email=body.get("email")
+    if email is None: 
+        fbpLog("fbpadmin@my-fbp-com", "GetPickSheet", "Email address is required in the request body", "ERROR")
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"error": "Email address is required in the request body"}),
+        }
     if week is None:
         fbpLog("fbpadmin@my-fbp-com", "GetPickSheet", "Could not determine current week", "ERROR")
         return {
@@ -64,14 +71,14 @@ def getPickSheet() -> dict[str, Any]:
         schedule: list[Any] = response.get('Items', []) 
         if not schedule:
             logger.warning(f"No picks found for week {week}")
-            fbpLog("fbpadmin@my-fbp-com", "GetPickSheet", f"No picks found for week {week}", "WARNING")
+            fbpLog(email=email, action="GetPickSheet", details=f"No picks found for week {week}", level="WARNING")
             return {
                 "statusCode": 404,
                 "body": json.dumps({"error": f"No picks found for week {week}"}),
             }
         else:
             logger.info(f"Retrieved {len(schedule)} picks for week {week}")
-            fbpLog("fbpadmin@my-fbp-com", "GetPickSheet", f"Retrieved {len(schedule)} picks for week {week}", "INFO")
+            fbpLog(email=email, action="GetPickSheet", details=f"Retrieved {len(schedule)} picks for week {week}", level="INFO")
             return {
                 "statusCode": 200,
                 "body": schedule,

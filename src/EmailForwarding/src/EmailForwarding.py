@@ -10,6 +10,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 import logging
+from fbplib.fbpLog import fbpLog
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -82,5 +83,6 @@ def lambda_handler(event, context):
         return {'statusCode': 200, 'body': 'Email forwarded successfully'}
         
     except Exception as e:
+        fbpLog("fbpadmin@my-fbp.com", "EmailForwarding", f"Error forwarding email: {str(e)}", "ERROR")
         logger.error(f"Error forwarding email: {str(e)}")
         raise e

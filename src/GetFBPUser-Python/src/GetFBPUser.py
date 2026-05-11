@@ -6,6 +6,7 @@ from decimal import Decimal
 from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
+import fbplib
 from fbplib.fbpLog import fbpLog
 
 
@@ -47,6 +48,7 @@ def getFBPUser():
         logger.info(f"Request body: {request_body}")
         if not request_body:
             logger.error("No JSON body found in the request")
+            fbpLog(email="fbpadmin@my-fbp.com", action="GetFBPUser", details="No JSON body found in the request", level="ERROR")
             return {
                 'statusCode': 400,
                 'body': json.dumps({
@@ -59,6 +61,7 @@ def getFBPUser():
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
+        fbpLog(email="fbpadmin@my-fbp.com", action="GetFBPUser", details=f"Unexpected error: {e}", level="ERROR")
         return {
             'statusCode': 400,
             'body': json.dumps({
@@ -68,6 +71,7 @@ def getFBPUser():
         }
 
     if not email:   
+        fbpLog(email="fbpadmin@my-fbp.com", action="GetFBPUser", details="Email address is required", level="ERROR")
         return {
             'statusCode': 400,
             'body': json.dumps({
@@ -97,6 +101,7 @@ def getFBPUser():
             }
     else:
         logger.info(f"User not found: {email}")
+        fbpLog(email, "GetFBPUser", f"User with email {email} not found", "ERROR")
         return {
             'statusCode': 404,
             'body': json.dumps({

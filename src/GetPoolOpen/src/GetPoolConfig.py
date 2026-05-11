@@ -2,6 +2,7 @@ import json
 import boto3
 from decimal import Decimal
 from botocore.exceptions import ClientError
+from fbplib.fbpLog import fbpLog
 
 def lambda_handler(event, context):
     """
@@ -25,6 +26,7 @@ def lambda_handler(event, context):
                 })
             }
     else:
+        fbpLog("fbpadmin@my-fbp.com", "GetPoolConfig", "Configuration not found", "ERROR")
         return {
             'statusCode': 404,
             'body': json.dumps({
@@ -48,8 +50,8 @@ def get_pool_config():
         
         return item
     except ClientError as e:
-        print(f"DynamoDB Error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "GetPoolConfig", f"DynamoDB Error: {e}", "ERROR")
         return None
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "GetPoolConfig", f"Unexpected error: {e}", "ERROR")
         return None

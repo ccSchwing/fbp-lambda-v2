@@ -17,13 +17,11 @@ This function will return all email addresses and displayname for the users in t
 That data will be used by admin to view/modify profiles for users in the system.
 This is GET with no parameters, it will return all users in the system with their email and display name.
 '''
-
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger("SendEmail")
 logger.info("Initializing SendEmail Lambda function")  # Log initialization message
 logger.setLevel(logging.INFO)
 logger.info("SendEmail Lambda function initialized successfully")  # Log successful initialization
-logger.info("JUNK!!! Lambda function initialized successfully")  # Log successful initialization
-logger.info("JUNK!!! Lambda function initialized successfully")  # Log successful initialization
 
 
 USERS_TABLE_NAME = os.environ.get('FBPUsersTableName', 'FBP-Users')
@@ -50,6 +48,7 @@ def sendTemplatedEmail():
         logger.info(f"Raw event data: {json.dumps(app.current_event.raw_event, default=str)}")  # Log the raw event data
 
     except Exception as e:
+        fbpLog("fbpadmin@my-fbp.com", "SendEmail", f"Unexpected error: {e}", "ERROR")
         logger.error(f"Unexpected error: {e}")
         return {
             'statusCode': 400,
@@ -83,6 +82,7 @@ def sendTemplatedEmail():
 
     logger.info(f"the templateName is: {templateName}")
     if not templateName:
+        fbpLog("fbpadmin@my-fbp.com", "SendEmail", "templateName not present:  Please provide a valid request type (email, firstName, messageType)", "ERROR")
         return {
             'statusCode': 400,
             'body': json.dumps({

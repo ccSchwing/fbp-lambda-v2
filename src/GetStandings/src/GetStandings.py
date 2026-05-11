@@ -10,10 +10,10 @@ from fbplib.getCurrentWeek import getCurrentWeek
 from fbplib.fbpLog import fbpLog
 
 
+logging.basicConfig(format='%(levelname)s %(message)s')
 logger = logging.getLogger()
 logger.info("Initializing GetStandings Lambda function")  # Log initialization message
 logger.setLevel(level=logging.INFO)
-logger.info("CORS configuration applied")
 
 cors_config = CORSConfig(
     allow_origin="*",  # Or specify your domain like "https://yourdomain.com"
@@ -21,6 +21,7 @@ cors_config = CORSConfig(
     max_age=86400,  # Cache preflight for 24 hours
     allow_credentials=False
 )
+logger.info("CORS configuration applied")
 
 app=APIGatewayHttpResolver(cors=cors_config)
 @app.get("/getStandings")
@@ -52,8 +53,10 @@ def getStandings():
         try:
             week_number = int(week_number)
         except (ValueError, TypeError):
+            fbpLog("fbpadmin@my-fbp.com", "GetStandings", "Invalid week number.", "ERROR")
+            logger.error("Invalid week number.")
             return Response (
-                status_code=200,
+                status_code=400,
                 content_type="application/json",
                 body=json.dumps({
                     'error': 'Invalid week number',
@@ -102,7 +105,8 @@ def getStandings():
             )
         
     except ClientError as e:
-        print(f"DynamoDB Error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "GetStandings", f"ClientError: {e}", "ERROR")
+        logger.error(f"ClientError: {e}")
         return Response (
             status_code=500,
             content_type="application/json",
@@ -112,7 +116,8 @@ def getStandings():
             })
         )
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "GetStandings", f"Unexpected error: {e}", "ERROR")
+        logger.error(f"Unexpected error: {e}")
         return Response (
             status_code=500,
             content_type="application/json",

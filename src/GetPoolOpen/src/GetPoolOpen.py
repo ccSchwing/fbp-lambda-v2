@@ -9,12 +9,13 @@ from botocore.exceptions import ClientError
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
 from fbplib.getCurrentWeek import getCurrentWeek
+from fbplib.fbpLog import fbpLog
 
 
 logger = logging.getLogger()
 logger.info("Initializing GetPoolOpenEvent Lambda function")  # Log initialization message
+fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", "Initializing GetPoolOpenEvent Lambda function", "INFO")
 logger.setLevel(level=logging.INFO)
-logger.info("CORS configuration applied")
 
 cors_config = CORSConfig(
     allow_origin="*",  # Or specify your domain like "https://yourdomain.com"
@@ -24,6 +25,8 @@ cors_config = CORSConfig(
 )
 
 app=APIGatewayHttpResolver(cors=cors_config)
+logger.info("CORS configuration applied")
+
 @app.get("/getPoolOpen")
 @app.get("/getPoolStatus")
 def getPoolStatus():
@@ -39,6 +42,7 @@ def getPoolStatus():
     try:
         week_number = getCurrentWeek()
         if week_number is None:
+            fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", "Cannot determine current week.", "ERROR")
             return {
                 'statusCode': 400,
                 'body': json.dumps({
@@ -52,6 +56,7 @@ def getPoolStatus():
         try:
             week_number = int(week_number)
         except (ValueError, TypeError):
+            fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", "Invalid week number.", "ERROR")
             return {
                 'statusCode': 400,
                 'body': json.dumps({
@@ -73,8 +78,10 @@ def getPoolStatus():
             pool_open = response['Item'].get('poolOpen', False)
             if pool_open == True:
                 logger.info(f"Week {week_number} pool is OPEN")
+                fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", f"Week {week_number} pool is OPEN", "INFO")
             else:
                 logger.info(f"Week {week_number} pool is CLOSED")
+                fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", f"Week {week_number} pool is CLOSED", "INFO")
             week_number = response['Item'].get('Week', week_number)            
             if isinstance(week_number, Decimal):
                 week_number = int(week_number)
@@ -86,6 +93,7 @@ def getPoolStatus():
                 })
             }
         else:
+            fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", f"Configuration for week {week_number} not found", "ERROR")
             return {
                 'statusCode': 404,
                 'body': json.dumps({
@@ -96,7 +104,7 @@ def getPoolStatus():
             }
             
     except ClientError as e:
-        print(f"DynamoDB Error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", f"Database error: {str(e)}", "ERROR")
         return {
             'statusCode': 500,
             'body': json.dumps({
@@ -105,7 +113,7 @@ def getPoolStatus():
             })
         }
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "GetPoolOpenEvent", f"Unexpected error: {str(e)}", "ERROR")
         return {
             'statusCode': 500,
             'body': json.dumps({
