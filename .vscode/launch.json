@@ -54,6 +54,23 @@
       ]
     },
     {
+      "name": "Python: Attach to GetAllFBPPicksPython",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to GetAllFBPPicksPython",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetAllFBPPicksPython/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
       "name": "Python: Attach to QueryFBPLogs",
       "type": "debugpy",
       "request": "attach",
@@ -66,6 +83,40 @@
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}/src/QueryFBPLogs/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
+      "name": "Python: Attach to GetPickSheetPython",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to GetPickSheetPython",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetPickSheetPython/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
+      "name": "Python: Attach to GetSchedule",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to GetSchedule",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetSchedule/src",
           "remoteRoot": "/var/task"
         }
       ]

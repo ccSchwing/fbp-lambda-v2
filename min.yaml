@@ -196,6 +196,42 @@ Resources:
             Method: OPTIONS
             PayloadFormatVersion: '2.0'
 
+  GetSchedule:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/GetSchedule/src/
+      Handler: GetSchedule.lambda_handler
+      Runtime: python3.12
+      Layers:
+        - !Ref FBPLibLayer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPScheduleTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPLogsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPConfigTableName
+      Environment:
+        Variables:
+          FBPScheduleTableName: !Ref FBPScheduleTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+          FBPConfigTableName: !Ref FBPConfigTableName
+      Events:
+        GetScheduleGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getschedule
+            Method: GET
+            PayloadFormatVersion: '2.0'
+        GetScheduleOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getschedule
+            Method: OPTIONS
+            PayloadFormatVersion: '2.0'
+            
   SendEmail:
     Type: AWS::Serverless::Function
     Properties:
@@ -872,6 +908,21 @@ Outputs:
     Value: !Ref MyHttpApi
     Export:
       Name: !Sub ${AWS::StackName}-HttpApiId
+  GetScheduleFunctionArn:
+    Description: ARN of the GetSchedule Lambda function
+    Value: !GetAtt GetSchedule.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-GetScheduleFunctionArn"
+  GetScheduleFunctionName:
+    Description: Name of the GetSchedule Lambda function
+    Value: !Ref GetSchedule
+    Export:
+      Name: !Sub "${AWS::StackName}-GetScheduleFunctionName"
+  GetScheduleApi:
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getschedule
+    Export:
+      Name: !Sub ${AWS::StackName}-GetScheduleApi
+    Description: URL of the GetSchedule API endpoint
   QueryFBPLogsFunctionArn:
     Description: ARN of the QueryFBPLogs Lambda function
     Value: !GetAtt QueryFBPLogs.Arn
