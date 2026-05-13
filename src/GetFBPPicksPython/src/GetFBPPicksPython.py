@@ -104,8 +104,6 @@ def getPicksForUser():
         # and the user has made not picks yet.
         # so return what you find.
 
-        if 'tieBreaker' in picksData:
-            picksData['tieBreaker'] = int(picksData['tieBreaker'])
         return Response(
             status_code=200,
             content_type="application/json",

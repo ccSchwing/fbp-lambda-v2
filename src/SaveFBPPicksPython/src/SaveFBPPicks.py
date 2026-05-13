@@ -1,16 +1,19 @@
 from calendar import c
 import json
 from math import log
+import random
 import os
 import re
 from typing import Any
 import boto3
 import logging
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Attr, Key
 from aws_lambda_powertools.event_handler import APIGatewayHttpResolver, Response
 from aws_lambda_powertools.event_handler.api_gateway import CORSConfig
+from fbplib.decimalDefault import decimal_default
 from fbplib.fbpLog import fbpLog
-from fbplib import getCurrentWeek
+from fbplib.getCurrentWeek import getCurrentWeek
 
 
 '''
@@ -46,7 +49,7 @@ def saveFBPPicks():
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table(FBP_PICKS_TABLE_NAME)
 
-    week=getCurrentWeek.getCurrentWeek()
+    week=getCurrentWeek()
     if week is None:
         fbpLog("fbpadmin@my-fbp.com", "SaveFBPPicksPython", "Could not determine current week", "ERROR")
         return {
@@ -104,7 +107,7 @@ def validateAndFixFBPPicks():
     picksTable = dynamodb.Table(FBP_PICKS_TABLE_NAME)
     usersTable = dynamodb.Table(FBP_USERS_TABLE_NAME)
 
-    week=getCurrentWeek.getCurrentWeek()
+    week=getCurrentWeek()
     if week is None:
         fbpLog("fbpadmin@my-fbp.com", "SaveFBPPicksPython", "Could not determine current week", "ERROR")
         return {
@@ -119,15 +122,6 @@ def validateAndFixFBPPicks():
             logger.error("Request body must be a JSON object")
             raise ValueError("Request body must be a JSON object")
         logger.info(f"Parsed JSON body: {body}")
-        email = body.get('email')
-        if email is None:
-            logger.error("Email is required in the request body")
-            fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", "Email is required in the request body", "ERROR")
-            return Response(
-                status_code=400,
-                body=json.dumps({'error': 'Email is required'})
-            )
-        okToProceed = True
         picks = body.get('picks')
         noPicks = False
         noTieBreaker = False
@@ -139,6 +133,27 @@ def validateAndFixFBPPicks():
         # the user made no picks.
         if tieBreaker is None:
             noTieBreaker = True
+            # Get default tieBreaker from DB for the user.
+            response = usersTable.get_item(Key={'email': email})
+            if 'Item' not in response:
+                logger.error(f"User with email {email} not found in FBP-Users table")
+                fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"User with email {email} not found in FBP-Users table: Continuing.", level="WARNING")
+            else:
+                user = response['Item']
+                defaultTieBreaker = user.get('defaultTieBreaker')
+                if defaultTieBreaker is not None:
+                    tieBreaker = defaultTieBreaker
+                    noTieBreaker = False
+                    logger.info(f"Using default tieBreaker from DB for user {email}: {tieBreaker}")
+                    fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"Using default tieBreaker from DB for user {email}: {tieBreaker}", level="INFO")
+                else:
+                    logger.warning(f"No default tieBreaker found in DB for user {email}")
+                    fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"No default tieBreaker found in DB for user {email}", level="WARNING")
+                    # set tieBreaker to a random number between 21 and 49
+                    tieBreaker = random.randint(a=21, b=49)
+                    noTieBreaker = False
+                    logger.info(f"Set tieBreaker to random number: {tieBreaker}")
+                    fbpLog(email=email, action="method: validateAndFixFBPPicks", details=f"Set tieBreaker to random number: {tieBreaker}", level="INFO")
         # Check to see if user had already made picks for the week.  If they had, we will use those picks and only replace the missing picks with the algorithm.  If they had not made any picks, then we will apply the algorithm to all picks.
         existingPicksResponse = picksTable.get_item(Key={'email': email})
         if 'Item' in existingPicksResponse and existingPicksResponse['Item'].get('week') == week:
@@ -183,7 +198,7 @@ def validateAndFixFBPPicks():
         # of games for that week and use it as a limit for the picks string.
         scheduleTable = dynamodb.Table(FBP_SCHEDULE_TABLE_NAME)
         response = scheduleTable.scan(
-            FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
+            FilterExpression=Attr('Week').eq(week)
         )
         schedule = response.get('Items', [])
         if not schedule:
@@ -200,16 +215,15 @@ def validateAndFixFBPPicks():
                     picks = "H" * numberOfGames
                 else:
                     # Replace all ? with H
-                    picks = picks.replace("?", "H")
+                    picks = str(picks).replace("?", "H")
             case "away":
                 if noPicks:
                     picks = "A" * numberOfGames
                 else:
                     # Replace all ? with A
-                    picks = picks.replace("?", "A")
+                    picks = str(picks).replace("?", "A")
             case "random":
                 defaultPicks = []
-                import random
                 if noPicks:
                     for _ in range(numberOfGames):
                         rNumber = random.uniform(0, 1)
@@ -238,7 +252,7 @@ def validateAndFixFBPPicks():
                 # Underdog is defined in the DB as either H or A.
                 # Favorite is NOT defined, so scan for it and invert it to get the favorite.
                 response = scheduleTable.scan(
-                FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
+                FilterExpression=Attr('Week').eq(week)
                 )
                 schedule = response.get('Items', [])
                 if not schedule: 
@@ -252,10 +266,9 @@ def validateAndFixFBPPicks():
                     # For each game in the schedule, determine the favorite and set the pick
                     defaultPicks = []
                     for game in schedule:
-                        gameObject = JSON.parse(game)
-                        if gameObject.get('Underdog') == "H":
+                        if game.get('Underdog') == "H":
                             defaultPicks += "A"
-                        elif gameObject.get('Underdog') == "A":
+                        elif game.get('Underdog') == "A":
                             defaultPicks += "H"
                     picks = "".join(defaultPicks)
                     logger.info(f"Set picks to favorites: {picks}")
@@ -278,7 +291,7 @@ def validateAndFixFBPPicks():
                 scheduleTable = dynamodb.Table(FBP_SCHEDULE_TABLE_NAME)
                 # Underdog is defined in the DB as either H or A.
                 response = scheduleTable.scan(
-                FilterExpression=boto3.dynamodb.conditions.Attr('Week').eq(week)
+                FilterExpression=Attr('Week').eq(week)
                 )
                 schedule = response.get('Items', [])
                 if not schedule:
@@ -330,6 +343,131 @@ def validateAndFixFBPPicks():
         logger.error(f"DynamoDB Error: {e}")
         fbpLog(email="fbpadmin@my-fbp.com", action="method: validateAndFixFBPPicks", details=f"DynamoDB Error: {e}", level="ERROR")
         return{
+            'statusCode': 500,
+            'body': json.dumps({'error': 'DynamoDB Error'}),
+        }
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Unexpected error: {e}", "ERROR")
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': 'Unexpected error'}),
+        }
+    #
+    # Now that we've validated and fixed all of the picks, let's see if we have a tie
+    # on the number of correct picks.  If so, we need to check against the Monday Night tieBreaker
+    # to determin the winner.  If there is still a tie, I think I'll give each player 1/2 of a win.
+    #
+    try:
+        # First, get all picks for the week from the FBP_PICKS_TABLE
+        # and put them in a list of dictionaries with the email and picks
+        # and tieBreaker fields.
+        response = picksTable.scan(
+            FilterExpression=Attr('week').eq(week)
+        )
+        picksList = response.get('Items', [])
+        # Now, for each pick in the list, calculate the number of correct picks
+        # and store it in the picks dictionary.
+        for pick in picksList:
+            email = pick['email']
+            userPicks = pick['picks']
+            correctPicks = 0
+            # Get the schedule for the week
+            response = scheduleTable.scan(
+                FilterExpression=Attr('Week').eq(week)
+            )
+            schedule = response.get('Items', [])
+            # For each game in the schedule, compare the user's pick to the actual result
+            # and increment the correctPicks counter if the pick is correct.
+            for i, game in enumerate(schedule):
+                if i < len(str(userPicks)):
+                    userPick = str(userPicks)[i]
+                    if userPick == game['Winner']:
+                        correctPicks += 1
+            # Update the picks dictionary with the correct picks
+            pick['correctPicks'] = correctPicks
+        # Now, sort the picks list by correct picks in descending order
+
+        picksList.sort(key=lambda x: decimal_default(x['correctPicks']), reverse=True)
+        # Now, check if the top two picks have the same number of correct picks
+        # If so, check the tieBreaker value for each and see who has the higher value
+        # If there is still a tie, we'll give each player 1/2 of a win.
+        if picksList[0]['correctPicks'] == picksList[1]['correctPicks']:
+            # There is a tie, so check the tieBreaker values
+            # The player with the higher tieBreaker value wins
+            # If there is still a tie, we'll give each player 1/2 of a win.
+            user1wins=decimal_default(picksList[0]['tieBreaker'])
+            user2wins=decimal_default(picksList[1]['tieBreaker'])
+            if user1wins > user2wins:
+                # Player 1 wins
+                picksTable.update_item(
+                    Key={'email': picksList[0]['email']},
+                    UpdateExpression="SET #Winner = :w",
+                    ExpressionAttributeNames={'#Winner': 'Winner'},
+                    ExpressionAttributeValues={':w': True} 
+                )
+                logger.info(f"Player {picksList[0]['email']} wins outright with {user1wins}.")
+                fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Player {picksList[0]['email']} wins outright with {user1wins}.", "INFO")
+            if user1wins == user2wins:
+                # Use the tieBreaker to tell who won.  If there is still a tie, give each player 1/2 of a win.
+                user1tieBreaker = decimal_default(picksList[0]['tieBreaker'])
+                user2tieBreaker = decimal_default(picksList[1]['tieBreaker'])
+                # Now get the total points from the monday night game.
+                # Get the max of the gameId value.  Format: 01-XXX
+                gamePrefix = ""
+                gameIdNumber = 0
+                gameId = ""
+                for game in schedule:
+                    gameId = str(game['gameId'])
+                    gamePrefix = (gameId.split("-")[0])
+                    gameIdNumber = str(gameId.split("-")[1])
+                # when you get here, you should have the gameId for the Monday night game.
+                # You can use this to get the tieBreaker result from the schedule table and then determine the winner.
+                mondayNightGame=scheduleTable.query(
+                        KeyConditionExpression=Key('gameId').eq(gameId)
+                )   
+                mondayNightTotalPoints = decimal_default(mondayNightGame['Items'][0].get('AwayScore', 0)) + decimal_default(mondayNightGame['Items'][0].get('HomeScore', 0))
+                if user1tieBreaker == user2tieBreaker:
+                    if user1tieBreaker == mondayNightTotalPoints:
+                        # It's a tie, give each player 1/2 of a win
+                        picksTable.update_item(
+                            Key={'email': picksList[0]['email']},
+                            UpdateExpression="SET #Winner = :w",
+                            ExpressionAttributeNames={'#Winner': 'Winner'},
+                            ExpressionAttributeValues={':w': True} 
+                        )
+                        picksTable.update_item(
+                            Key={'email': picksList[1]['email']},
+                            UpdateExpression="SET #Winner = :w",
+                            ExpressionAttributeNames={'#Winner': 'Winner'},
+                            ExpressionAttributeValues={':w': True} 
+                        )
+                        logger.info(f"Players {picksList[0]['email']} and {picksList[1]['email']} tie with {user1tieBreaker} and Monday night total points of {mondayNightTotalPoints}.")
+                        fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Players {picksList[0]['email']} and {picksList[1]['email']} tie with {user1tieBreaker} and Monday night total points of {mondayNightTotalPoints}.", "INFO")
+                    elif abs(user1tieBreaker - mondayNightTotalPoints) < abs(user2tieBreaker - mondayNightTotalPoints):
+                        # Player 1 wins
+                        picksTable.update_item(
+                            Key={'email': picksList[0]['email']},
+                            UpdateExpression="SET #Winner = :w",
+                            ExpressionAttributeNames={'#Winner': 'Winner'},
+                            ExpressionAttributeValues={':w': True} 
+                        )
+                        logger.info(f"Player {picksList[0]['email']} wins the tiebreaker with a tieBreaker of {user1tieBreaker} compared to {user2tieBreaker} and Monday night total points of {mondayNightTotalPoints}.")
+                        fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Player {picksList[0]['email']} wins the tiebreaker with a tieBreaker of {user1tieBreaker} compared to {user2tieBreaker} and Monday night total points of {mondayNightTotalPoints}.", "INFO")
+                    else:
+                        # Player 2 wins
+                        picksTable.update_item(
+                            Key={'email': picksList[1]['email']},
+                            UpdateExpression="SET #Winner = :w",
+                            ExpressionAttributeNames={'#Winner': 'Winner'},
+                            ExpressionAttributeValues={':w': True} 
+                        )
+                        logger.info(f"Player {picksList[1]['email']} wins the tiebreaker with a tieBreaker of {user2tieBreaker} compared to {user1tieBreaker} and Monday night total points of {mondayNightTotalPoints}.")
+                        fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"Player {picksList[1]['email']} wins the tiebreaker with a tieBreaker of {user2tieBreaker} compared to {user1tieBreaker} and Monday night total points of {mondayNightTotalPoints}.", "INFO")
+    except ClientError as e:
+        logger.error(f"DynamoDB Error: {e}")
+        fbpLog("fbpadmin@my-fbp.com", "method: validateAndFixFBPPicks", f"DynamoDB Error: {e}", "ERROR")
+        return {
             'statusCode': 500,
             'body': json.dumps({'error': 'DynamoDB Error'}),
         }

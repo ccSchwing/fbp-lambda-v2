@@ -231,7 +231,45 @@ Resources:
             Path: /getschedule
             Method: OPTIONS
             PayloadFormatVersion: '2.0'
-            
+  ResetDBs:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/ResetDBs/src/
+      Handler: ResetDBs.lambda_handler
+      Runtime: python3.12
+      Layers:
+        - !Ref FBPLibLayer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPPicksTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPWeeklyResultsTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPConfigTableName
+      Environment:
+        Variables:
+          FBPPicksTableName: !Ref FBPPicksTableName
+          FBPWeeklyResultsTableName: !Ref FBPWeeklyResultsTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+          FBPConfigTableName: !Ref FBPConfigTableName
+      Events:
+        ResetDBsGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /resetDBs
+            Method: GET
+            PayloadFormatVersion: '2.0'
+        ResetDBsOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /resetDBs
+            Method: OPTIONS
+            PayloadFormatVersion: '2.0'
+
   SendEmail:
     Type: AWS::Serverless::Function
     Properties:

@@ -122,6 +122,40 @@
       ]
     },
     {
+      "name": "Python: Attach to ResetDBs",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to ResetDBs",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/ResetDBs/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+   {
+      "name": "Python: Attach to ValidatePicks",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to ValidatePicks",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/SaveFBPPicks/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
       "name": "Python: Attach to AddOrUpdateFBPUser",
       "type": "debugpy",
       "request": "attach",

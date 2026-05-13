@@ -87,6 +87,12 @@ def getWeeklyResults():
             for picks in sortedPicks:
                 if sortedPicks.index(picks) == 0:
                     picks['Winner'] = True
+                    resultsTable.update_item(
+                        Key={'email': picks['email']},
+                        UpdateExpression="SET #Winner = :w",
+                        ExpressionAttributeNames={'#Winner': 'Winner'},
+                        ExpressionAttributeValues={':w': True}
+                    )
                 else:
                     picks['Winner'] = False
                     resultsTable.update_item(
@@ -95,20 +101,23 @@ def getWeeklyResults():
                         ExpressionAttributeNames={'#Winner': 'Winner'},
                         ExpressionAttributeValues={':w': False}
                     )
-                    
-            for picks in allUserPicks:
-                userEmail=picks['email']
-                correctPicks=picks['CorrectPicks']
-                inCorectPicks=picks['IncorrectPicks']
-                usersTable.update_item(
-                    Key={'email': userEmail},
-                    UpdateExpression="SET #totalCorrectPicks = if_not_exists(#totalCorrectPicks, :zero) + :c, #totalIncorrectPicks = if_not_exists(#totalIncorrectPicks, :zero) + :i",
-                    ExpressionAttributeNames={'#totalCorrectPicks': 'totalCorrectPicks', '#totalIncorrectPicks': 'totalIncorrectPicks'},
-                    ExpressionAttributeValues={':zero': 0, ':c': correctPicks, ':i': inCorectPicks}
-                )
-            fbpLog("fbpadmin@my-fbp.com", "GetWeeklyResults", f"Updated user picks for week {week}", "INFO")
-            logger.info(f"Calculated results for week {week}: {len(allUserPicks)} allUserPicks updated")
-            fbpLog("fbpadmin@my-fbp.com", "GetWeeklyResults", f"Calculated results for week {week}", "INFO")
+            # Why are we updating this table??
+            # That's the job of the UpdateWeeklyResults function.
+            # This is just to return the results to the front end.
+            #       
+            # for picks in allUserPicks:
+            #     userEmail=picks['email']
+            #     correctPicks=picks['CorrectPicks']
+            #     incorrectPicks=picks['IncorrectPicks']
+            #     usersTable.update_item(
+            #         Key={'email': userEmail},
+            #         UpdateExpression="SET #totalCorrectPicks = if_not_exists(#totalCorrectPicks, :zero) + :c, #totalIncorrectPicks = if_not_exists(#totalIncorrectPicks, :zero) + :i",
+            #         ExpressionAttributeNames={'#totalCorrectPicks': 'totalCorrectPicks', '#totalIncorrectPicks': 'totalIncorrectPicks'},
+            #         ExpressionAttributeValues={':zero': 0, ':c': correctPicks, ':i': incorrectPicks}
+            #     )
+            # fbpLog("fbpadmin@my-fbp.com", "GetWeeklyResults", f"Updated user picks for week {week}", "INFO")
+            # logger.info(f"Calculated results for week {week}: {len(allUserPicks)} allUserPicks updated")
+            # fbpLog("fbpadmin@my-fbp.com", "GetWeeklyResults", f"Calculated results for week {week}", "INFO")
     except ClientError as e:
         logger.error(f"DynamoDB Error: {e}")
         fbpLog("fbpadmin@my-fbp.com", "GetWeeklyResults", f"DynamoDB Error: {e}", "ERROR")

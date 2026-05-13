@@ -191,10 +191,10 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
                 if userPicks[index] == gameResultsList[index]:
                     correctPicks += 1
                 else:
-                    fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"userPick: {userPicks[index]} is incorrect for game result: {gameResultsList[index]}", "INFO")
                     incorrectPicks += 1
                 index += 1
         email=picks['email']
+
 
         # use email to get displayName from FBP_USERS_TABLE
         displayName = "Unknown User"
@@ -210,8 +210,8 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
         try:
             resultsTable.update_item(
             Key={'email': email},
-            UpdateExpression="SET #CorrectPicks = :c, #IncorrectPicks = :i",
-            ExpressionAttributeNames={'#CorrectPicks': 'correctPicks', '#IncorrectPicks': 'incorrectPicks'},
+            UpdateExpression="SET #correctPicks = :c, #incorrectPicks = :i",
+            ExpressionAttributeNames={'#correctPicks': 'correctPicks', '#incorrectPicks': 'incorrectPicks'},
             ExpressionAttributeValues={':c': correctPicks, ':i': incorrectPicks}
         )
         except ClientError as e:
@@ -244,10 +244,23 @@ def updateWeeklyUserResults(allUserPicks: List[Dict[str, Any]], resultsTable, us
             'incorrectPicks': incorrectPicks
         }
         gameResultsJSON.append(weeklyResult)
+        # End of for loop for each user's picks for the week.
+    # now you can set the Winner field for each user in the
+    # FBP_WEEKLY_RESULTS_TABLE based on the number of correct picks for the week.
+    response = resultsTable.scan()
+    items = response['Items']
+    max_item = max(items, key=lambda x: x.get('correctPicks', 0))
+    max_value = max_item['correctPicks']
+    email = max_item['email']
+    resultsTable.update_item(
+        Key={'email': email},
+        UpdateExpression="SET #Winner = :w",
+        ExpressionAttributeNames={'#Winner': 'Winner'},
+        ExpressionAttributeValues={':w': True}
+    )
+    fbpLog("fbpadmin@my-fbp.com", "UpdateWeeklyResults", f"Set winner for week {week} to {email} with {max_value} correct picks", "INFO")
     gameResultsJSON.sort(key=lambda x: x['correctPicks'], reverse=True)  # Sort the results by correct picks in descending order
     return gameResultsJSON
-
-
 
 def lambda_handler(event, context):
     print("Received event:", json.dumps(event))  # Log the received event for debugging

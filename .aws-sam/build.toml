@@ -171,6 +171,15 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["GetSchedule"]
 
+[function_build_definitions.7ecce180-dd8e-45a9-b139-a540da82b012]
+codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/ResetDBs/src"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "ResetDBs.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["ResetDBs"]
+
 [layer_build_definitions.ffb77695-7bbb-459d-ae88-74780ab875c0]
 layer_name = "FBPLibLayer"
 codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/FBPLib-Layer"
