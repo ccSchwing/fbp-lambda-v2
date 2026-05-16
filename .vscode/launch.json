@@ -37,18 +37,35 @@
       ]
     },
     {
-      "name": "Python: Attach to SaveFBPPicks",
+      "name": "Python: Attach to SaveFBPPicks(ValidatePicks)",
       "type": "debugpy",
       "request": "attach",
       "connect": {
         "host": "localhost",
         "port": 5678
       },
-      "preLaunchTask": "Attach to SaveFBPPicks",
+      "preLaunchTask": "Attach to ValidatePicks",
       "postDebugTask": "Cleanup",
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}/src/SaveFBPPicksPython/src",
+          "remoteRoot": "/var/task"
+        }
+      ]
+    },
+    {
+      "name": "Python: Attach to GetUserStatus",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "preLaunchTask": "Attach to GetUserStatus",
+      "postDebugTask": "Cleanup",
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/src/GetUserStatus/src",
           "remoteRoot": "/var/task"
         }
       ]

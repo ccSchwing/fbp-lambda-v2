@@ -163,6 +163,39 @@ Resources:
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FBP-Config"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/2025-Log"
                   - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FBP-Users"
+  GetUserStatus:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/GetUserStatus/src/
+      Handler: GetUserStatus.lambda_handler
+      Runtime: python3.12
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FBPUsersTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FBPLogsTableName
+      Environment:
+        Variables:
+          FBPConfigTableName: !Ref FBPConfigTableName
+          FBPLogsTableName: !Ref FBPLogsTableName
+      Layers:
+        - !Ref FBPLibLayer
+      Events:
+        GetUserStatusPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getUserStatus
+            Method: POST
+            PayloadFormatVersion: '2.0'
+        GetUserStatusOptions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref MyHttpApi
+            Path: /getUserStatus
+            Method: OPTIONS
+            PayloadFormatVersion: '2.0'
+
   QueryFBPLogs:
     Type: AWS::Serverless::Function
     Properties:
@@ -946,6 +979,21 @@ Outputs:
     Value: !Ref MyHttpApi
     Export:
       Name: !Sub ${AWS::StackName}-HttpApiId
+  GetUserStatusFunctionArn:
+    Description: ARN of the GetUserStatus Lambda function
+    Value: !GetAtt GetUserStatus.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-GetUserStatusFunctionArn"
+  GetUserStatusFunctionName:
+    Description: Name of the GetUserStatus Lambda function
+    Value: !Ref GetUserStatus
+    Export:
+      Name: !Sub "${AWS::StackName}-GetUserStatusFunctionName"
+  GetUserStatusApi:
+    Description: URL of the GetUserStatus API endpoint
+    Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getUserStatus
+    Export:
+      Name: !Sub ${AWS::StackName}-GetUserStatusApi
   GetScheduleFunctionArn:
     Description: ARN of the GetSchedule Lambda function
     Value: !GetAtt GetSchedule.Arn
@@ -957,10 +1005,10 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-GetScheduleFunctionName"
   GetScheduleApi:
+    Description: URL of the GetSchedule API endpoint
     Value: !Sub https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod/getschedule
     Export:
       Name: !Sub ${AWS::StackName}-GetScheduleApi
-    Description: URL of the GetSchedule API endpoint
   QueryFBPLogsFunctionArn:
     Description: ARN of the QueryFBPLogs Lambda function
     Value: !GetAtt QueryFBPLogs.Arn
