@@ -180,6 +180,15 @@ manifest_hash = ""
 packagetype = "Zip"
 functions = ["ResetDBs"]
 
+[function_build_definitions.30034d80-e421-4fde-aebc-9aea29473d76]
+codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/GetUserStatus/src"
+runtime = "python3.12"
+architecture = "x86_64"
+handler = "GetUserStatus.lambda_handler"
+manifest_hash = ""
+packagetype = "Zip"
+functions = ["GetUserStatus"]
+
 [layer_build_definitions.ffb77695-7bbb-459d-ae88-74780ab875c0]
 layer_name = "FBPLibLayer"
 codeuri = "/Users/ccs/projects/fbp-lambda-v2/src/FBPLib-Layer"

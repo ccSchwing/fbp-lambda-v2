@@ -171,12 +171,15 @@ Resources:
       Runtime: python3.12
       Policies:
         - DynamoDBReadPolicy:
+            TableName: !Ref FBPConfigTableName  
+        - DynamoDBReadPolicy:
             TableName: !Ref FBPUsersTableName
         - DynamoDBCrudPolicy:
             TableName: !Ref FBPLogsTableName
       Environment:
         Variables:
           FBPConfigTableName: !Ref FBPConfigTableName
+          FBPUsersTableName: !Ref FBPUsersTableName
           FBPLogsTableName: !Ref FBPLogsTableName
       Layers:
         - !Ref FBPLibLayer
