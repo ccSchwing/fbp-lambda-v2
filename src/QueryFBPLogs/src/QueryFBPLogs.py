@@ -84,30 +84,48 @@ def query_fbp_logs():
 
         logTable = boto3.resource('dynamodb').Table(LOGS_TABLE_NAME)
 
-        response = logTable.query(
-        KeyConditionExpression="#lvl = :logLevel AND #ts BETWEEN :startDate AND :endDate",
-        FilterExpression="week = :week",  # Only if you have a 'week' attribute
-        ExpressionAttributeNames={
-            "#ts": "timestamp",
-            "#lvl": "level"
-        },
-        ExpressionAttributeValues={
-            ":logLevel": logLevel,
-            ":startDate": startDate,
-            ":endDate": endDate,
-            ":week": week
-        }
-        )
-
-
-        items = response.get('Items', [])
-        logger.info(f"Query returned {len(items)} log entries")
-        logger.info(f"Log entries: {json.dumps(items, default=decimal_default)}")
-        return Response(
-            status_code=200,
-            content_type="application/json",
-            body=json.dumps(items, default=decimal_default)
-        )
+        # Get all logs regardless of logLevel or filter by logLevel if provideod
+        # Do we care about what week it is?  I don't think so.
+        if logLevel == "ALL":
+            response = logTable.scan(
+                FilterExpression="#ts BETWEEN :startDate AND :endDate",
+                ExpressionAttributeNames={"#ts": "timestamp"},
+                ExpressionAttributeValues={
+                    ":startDate": startDate,
+                    ":endDate": endDate
+                }
+            )
+            items = response.get('Items', [])
+            logger.info(f"Query returned {len(items)} log entries")
+            logger.info(f"Log entries: {json.dumps(items, default=decimal_default)}")
+            return Response(
+                status_code=200,
+                content_type="application/json",
+                body=json.dumps(items, default=decimal_default)
+            )
+        else:
+            response = logTable.query(
+                KeyConditionExpression="#lvl = :logLevel AND #ts BETWEEN :startDate AND :endDate",
+                FilterExpression="week = :week",
+                ExpressionAttributeNames={
+                    "#ts": "timestamp",
+                    "#lvl": "level"
+                },
+                ExpressionAttributeValues={
+                    ":logLevel": logLevel,
+                    ":startDate": startDate,
+                    ":endDate": endDate,
+                    ":week": week
+                }
+            )
+            items = response.get('Items', [])
+            logger.info(f"Query returned {len(items)} log entries")
+            logger.info(f"Log entries: {json.dumps(items, default=decimal_default)}")
+            return Response(
+                status_code=200,
+                content_type="application/json",
+                body=json.dumps(items, default=decimal_default)
+            )
     except Exception as e:
         logger.error(f"Error parsing request body: {e}")
         return Response(
